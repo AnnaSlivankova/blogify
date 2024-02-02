@@ -4,9 +4,11 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "dev": "yarn nodemon --inspect dist/index.js",
     "watch": "tsc -w",
-    "jest": "jest -i"
+    "dev": "yarn nodemon --inspect dist/index.js",
+    "jest": "jest -i",
+    "build": "tsc",
+    "start": "node dist/index.js"
   },
   "dependencies": {
     "@types/jest": "^29.5.11",
