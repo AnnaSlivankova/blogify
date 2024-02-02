@@ -1,6 +1,6 @@
 import {app} from "./app";
-import {SETTINGS} from "./settings";
+import 'dotenv/config'
 
-app.listen(SETTINGS.PORT, () => {
-  console.log(`App listening on port ${SETTINGS.PORT}`)
+app.listen(process.env.PORT, () => {
+  console.log(`App listening on port ${process.env.PORT}`)
 })

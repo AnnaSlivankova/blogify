@@ -1,11 +1,14 @@
-import express, {json, Request, Response} from "express";
+import express, {json} from "express";
+import {blogRoute} from "./routes/blog-route";
+import {postRoute} from "./routes/post-route";
+import {testingAllDataRoute} from "./routes/testing-all-data-route";
 
 export const app = express()
 
 app.use(json())
 
-export const getInitialData = (req: Request, res: Response) => {
-  res.status(200).json({"TEST-DATA": "SUCCESS"})
-}
+app.use('/blogs', blogRoute)
 
-app.get('/', getInitialData)
+app.use('/posts', postRoute)
+
+app.use('/testing/all-data', testingAllDataRoute)
