@@ -1,35 +1,50 @@
 import {app} from "../src/app";
 import 'dotenv/config'
-import request from 'supertest'
-import {describe} from "node:test";
-import {PostViewModel} from "../src/models/post-models/PostViewModel";
-import {CreatePostModel} from "../src/models/post-models/CreatePostModel";
-import {BlogViewModel} from "../src/models/blog-models/BlogViewModel";
+import {agent} from "supertest";
+import {BlogViewModel} from "../src/models/blog-models/output/blog-view-model";
+import {PostViewModel} from "../src/models/post-models/output/post-view-model";
+import {CreatePostModel} from "../src/models/post-models/input/create-post-model";
+import {MongoClient} from "mongodb";
 
-const req = request(app)
+const req = agent(app)
 
 const commonHeaders = {
   "authorization": `Basic ${process.env.AUTH_CRED}`
 }
 
+const mongoURI = process.env.MONGO_URL
+
 describe('/posts', () => {
   let blog: BlogViewModel
   let createdPost: PostViewModel
 
+  if(!mongoURI) {
+    return console.log('invalid mongoURI:', mongoURI)
+  }
+
+  const client = new MongoClient(mongoURI)
+
   beforeAll(async () => {
+    await client.connect()
+
     await req.delete('/testing/all-data').expect(204)
 
     const res = await req.post('/blogs').set(commonHeaders).send({
       name: 'some blog name',
-      description: 'some blog description',
+      description: 'from post tests',
       websiteUrl: 'https://some-blog-url.com'
     }).expect(201)
 
     blog = res.body
   })
 
-  it('GET posts = []', () => {
-    req.get('/posts').expect([])
+  afterAll(async () => {
+    await req.delete('/testing/all-data').expect(204)
+    await client.close()
+  })
+
+  it('GET posts = []', async () => {
+    await req.get('/posts').expect([])
   })
 
   it('- POST should not create post with incorrect data (title/shortDescription/content/blogId)', async () => {
@@ -78,7 +93,7 @@ describe('/posts', () => {
   })
 
   it('- GET should return 404 when id is not correct', async () => {
-    req.get('/posts/incorrect-id').expect(404)
+    await req.get('/posts/incorrect-id').expect(404)
   })
 
   it('GET should return post by its id', async () => {

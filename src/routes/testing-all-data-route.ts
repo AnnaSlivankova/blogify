@@ -3,9 +3,9 @@ import {TestingAllDataRepository} from "../repositories/testing-all-data-reposit
 
 export const testingAllDataRoute = Router({})
 
-testingAllDataRoute.delete('/', (req: Request, res: Response) => {
+testingAllDataRoute.delete('/', async (req: Request, res: Response) => {
 
-  TestingAllDataRepository.deleteAllData()
+  await TestingAllDataRepository.deleteAllData()
 
   res.sendStatus(204)
 })

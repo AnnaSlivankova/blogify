@@ -1,25 +1,28 @@
-export const db: DBType = {
-  blogs: [],
-  posts: []
+import {PostDb} from "../models/post-models/db/post-db";
+import {MongoClient} from "mongodb";
+import {BlogDb} from "../models/blog-models/db/blog-db";
+import 'dotenv/config'
+
+const uri = process.env.MONGO_URL
+
+if (!uri) {
+  throw new Error('invalid DB uri!')
 }
 
-type DBType = {
-  blogs: BlogDB[]
-  posts: PostDB[]
-}
+const client = new MongoClient(uri)
 
-export type BlogDB = {
-  id: string
-  name: string
-  description: string
-  websiteUrl: string
-}
+export const db = client.db('blogify-db')
 
-export type PostDB = {
-  id: string
-  title: string
-  shortDescription: string
-  content: string
-  blogId: string
-  blogName: string
+export const blogsCollection = db.collection<BlogDb>('blogs')
+export const postsCollection = db.collection<PostDb>('posts')
+
+export const runDB = async () => {
+  try {
+    await client.connect()
+
+    console.log('Client connected to DB')
+    console.log(`App listening on port ${process.env.PORT}`)
+  } catch (e) {
+    console.log(e)
+  }
 }

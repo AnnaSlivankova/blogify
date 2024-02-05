@@ -1,39 +1,69 @@
-import {BlogDB, db} from "../db/db";
-import {CreateBlogModel} from "../models/blog-models/CreateBlogModel";
-import {createUniqueId} from "../common/utilities/сreateUniqueId";
-import {UpdateBlogModel} from "../models/blog-models/UpdateBlogModel";
+import {blogMapper} from "../models/blog-models/mapper/blog-mapper";
+import {BlogViewModel} from "../models/blog-models/output/blog-view-model";
+import {blogsCollection} from "../db/db";
+import {ObjectId} from "mongodb";
+import {UpdateBlogModel} from "../models/blog-models/input/update-blog-model";
+import {BlogDb} from "../models/blog-models/db/blog-db";
 
 export class BlogRepository {
-  static getAll() {
-    return db.blogs
-  }
+  static async getAll(): Promise<BlogViewModel[] | boolean> {
+    try {
+      const blogs = await blogsCollection.find({}).toArray()
 
-  static createBlog(createdData: CreateBlogModel) {
-
-    const createdBlogWithId: BlogDB = {
-      id: createUniqueId(),
-      ...createdData
+      return blogs.map(blogMapper)
+    } catch (e) {
+      return false
     }
-
-    db.blogs.push(createdBlogWithId)
-
-    return createdBlogWithId
   }
 
-  static getById(id: string) {
-    return db.blogs.find(b => b.id === id)
+  static async getById(id: string): Promise<BlogViewModel | boolean> {
+    try {
+      const blog = await blogsCollection.findOne({_id: new ObjectId(id)})
+
+      if (!blog) {
+        return false
+      }
+
+      return blogMapper(blog)
+    } catch (e) {
+      return false
+    }
   }
 
-  static updateBlog(data: { id: string, updateData: UpdateBlogModel }) {
-    db.blogs = db.blogs.map(b => b.id === data.id ? ({...b, ...data.updateData}) : b)
+  static async createBlog(createdData: BlogDb): Promise<BlogViewModel | null | boolean> {
+    try {
+      const res = await blogsCollection.insertOne(createdData)
 
-    return
+      return this.getById(res.insertedId.toString())
+      // return res.insertedId.toString() //или вернуть айдишку созданного блога и в контроллере запросить созданный блог по этой айдишке
+    } catch (e) {
+      return false
+    }
   }
 
-  static deleteBlog(id: string) {
-    db.blogs = db.blogs.filter(b => b.id !== id)
+  static async updateBlog(id: string, updatedData: UpdateBlogModel): Promise<boolean> {
+    try {
+      const res = await blogsCollection.updateOne({_id: new ObjectId(id)}, {
+        $set: {
+          name: updatedData.name,
+          websiteUrl: updatedData.websiteUrl,
+          description: updatedData.description
+        }
+      })
 
-    return
+      return !!res.matchedCount
+    } catch (e) {
+      return false
+    }
   }
 
+  static async deleteBlog(id: string): Promise<boolean> {
+    try {
+      const res = await blogsCollection.deleteOne({_id: new ObjectId(id)})
+
+      return !!res.deletedCount
+    } catch (e) {
+      return false
+    }
+  }
 }
