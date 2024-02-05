@@ -1,43 +1,69 @@
-import {BlogDB, db, PostDB} from "../db/db";
-import {CreatePostModel} from "../models/post-models/CreatePostModel";
-import {createUniqueId} from "../common/utilities/сreateUniqueId";
-import {UpdatePostModel} from "../models/post-models/UpdatePostModel";
-
+import {PostViewModel} from "../models/post-models/output/post-view-model";
+import {postsCollection} from "../db/db";
+import {postMapper} from "../models/post-models/mapper/post-mapper";
+import {PostDb} from "../models/post-models/db/post-db";
+import {ObjectId} from "mongodb";
+import {UpdatePostModel} from "../models/post-models/input/update-post-model";
 
 export class PostRepository {
-  static getAll() {
-    return db.posts
-  }
+  static async getAll(): Promise<PostViewModel[] | boolean> {
+    try {
+      const posts = await postsCollection.find({}).toArray()
 
-  static createPost(createdData: CreatePostModel) {
-
-    const relatedBlog = db.blogs.find(b => b.id === createdData.blogId) as BlogDB
-
-    const createdPost: PostDB = {
-      id: createUniqueId(),
-      blogName: relatedBlog.name,
-      ...createdData
+      return posts.map(postMapper)
+    } catch (e) {
+      return false
     }
-
-    db.posts.push(createdPost)
-
-    return createdPost
   }
 
-  static getPostById(id: string) {
-    return db.posts.find(p => p.id === id)
+  static async getPostById(id: string): Promise<PostViewModel | boolean> {
+    try {
+      const post = await postsCollection.findOne({_id: new ObjectId(id)})
+
+      if (!post) {
+        return false
+      }
+
+      return postMapper(post)
+    } catch (e) {
+      return false
+    }
   }
 
-  static updatePost(data: { id: string, updateData: UpdatePostModel }) {
-    db.posts = db.posts.map(p => p.id === data.id ? ({...p, ...data.updateData}) : p)
+  static async createPost(createdData: PostDb): Promise<string | boolean> {
+    try {
+      const res = await postsCollection.insertOne(createdData)
 
-    return
+      return res.insertedId.toString()
+    } catch (e) {
+      return false
+    }
   }
 
-  static deletePost(id: string) {
-    db.posts = db.posts.filter(p => p.id !== id)
+  static async updatePost(id: string, updatedData: UpdatePostModel): Promise<boolean> {
+    try {
+      const res = await postsCollection.updateOne({_id: new ObjectId(id)}, {
+        $set: {
+          title: updatedData.title,
+          shortDescription: updatedData.shortDescription,
+          content: updatedData.content,
+          blogId: updatedData.blogId
+        }
+      })
 
-    return
+      return !!res.matchedCount
+    } catch (e) {
+      return false
+    }
   }
 
+  static async deletePost(id: string): Promise<boolean> {
+    try {
+      const res = await postsCollection.deleteOne({_id: new ObjectId(id)})
+
+      return !!res.deletedCount
+    } catch (e) {
+      return false
+    }
+  }
 }

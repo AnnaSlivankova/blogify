@@ -1,26 +1,38 @@
 import {app} from "../src/app";
+import {agent} from "supertest";
 import 'dotenv/config'
-import request from 'supertest'
-import {describe} from "node:test";
-import {CreateBlogModel} from "../src/models/blog-models/CreateBlogModel";
-import {BlogViewModel} from "../src/models/blog-models/BlogViewModel";
+import {BlogViewModel} from "../src/models/blog-models/output/blog-view-model";
+import {CreateBlogModel} from "../src/models/blog-models/input/create-blog-model";
+import {MongoClient} from "mongodb";
 
-const req = request(app)
+const req = agent(app)
 
 const commonHeaders = {
   "authorization": `Basic ${process.env.AUTH_CRED}`
 }
 
-describe('/blogs', () => {
+const mongoURI = process.env.MONGO_URL
 
+describe('/blogs', () => {
   let createdBlog: BlogViewModel
 
+  if (!mongoURI) {
+    return console.log('invalid mongoURI:', mongoURI)
+  }
+
+  const client = new MongoClient(mongoURI)
+
   beforeAll(async () => {
+    await client.connect()
     await req.delete('/testing/all-data').expect(204)
   })
 
-  it('GET blogs = []', () => {
-    req.get('/blogs').expect([])
+  afterAll(async () => {
+    await client.close()
+  })
+
+  it('GET blogs = []', async () => {
+    await req.get('/blogs').expect([])
   })
 
   it('- POST should not create blog with incorrect data (name/description/websiteUrl)', async () => {
@@ -64,7 +76,7 @@ describe('/blogs', () => {
   })
 
   it('- GET should return 404 when id is not correct', async () => {
-    req.get('/blogs/incorrect-id').expect(404)
+    await req.get('/blogs/incorrect-id').expect(404)
   })
 
   it('GET should return blog by its id', async () => {
