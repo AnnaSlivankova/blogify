@@ -1,4 +1,4 @@
-import {app} from "../src/app";
+import {app, SETTINGS} from "../src/app";
 import 'dotenv/config'
 import {agent} from "supertest";
 import {BlogViewModel} from "../src/models/blog-models/output/blog-view-model";
@@ -9,7 +9,7 @@ import {MongoClient} from "mongodb";
 const req = agent(app)
 
 const commonHeaders = {
-  "authorization": `Basic ${process.env.AUTH_CRED}`
+  "authorization": `Basic ${SETTINGS.AUTH_CRED}`
 }
 
 const mongoURI = process.env.MONGO_URL
@@ -18,7 +18,7 @@ describe('/posts', () => {
   let blog: BlogViewModel
   let createdPost: PostViewModel
 
-  if(!mongoURI) {
+  if (!mongoURI) {
     return console.log('invalid mongoURI:', mongoURI)
   }
 

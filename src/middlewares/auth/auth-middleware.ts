@@ -1,5 +1,5 @@
 import {NextFunction, Request, Response} from "express";
-import 'dotenv/config'
+import {SETTINGS} from "../../app";
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   //simple auth check
@@ -27,7 +27,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 
   const [login, password] = decodedToken.split(':')
 
-  if (login !== process.env.LOGIN_CRED || password !== process.env.PASS_CRED) {
+  if (login !== SETTINGS.LOGIN_CRED || password !== SETTINGS.PASS_CRED) {
     res.sendStatus(401)
     return
   }
