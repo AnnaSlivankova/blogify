@@ -22,8 +22,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     return
   }
 
-  const decodedToken = new Buffer(token, 'base64').toString()
-  // const decodedToken = Buffer.from(token, 'utf-8').toString('base64')
+  const decodedToken = Buffer.from(token, 'base64').toString('utf-8')
 
   const [login, password] = decodedToken.split(':')
 
