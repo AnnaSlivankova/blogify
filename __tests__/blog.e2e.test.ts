@@ -1,4 +1,4 @@
-import {app, SETTINGS} from "../src/app";
+import {app, PATH, SETTINGS} from "../src/app";
 import {agent} from "supertest";
 import 'dotenv/config'
 import {BlogViewModel} from "../src/models/blog-models/output/blog-view-model";
@@ -24,7 +24,7 @@ describe('/blogs', () => {
 
   beforeAll(async () => {
     await client.connect()
-    await req.delete('/testing/all-data').expect(204)
+    await req.delete(PATH.TESTING).expect(204)
   })
 
   afterAll(async () => {
@@ -32,12 +32,12 @@ describe('/blogs', () => {
   })
 
   it('GET blogs = []', async () => {
-    await req.get('/blogs').expect([])
+    await req.get(PATH.BLOGS).expect([])
   })
 
   it('- POST should not create blog with incorrect data (name/description/websiteUrl)', async () => {
 
-    const res = await req.post('/blogs').set(commonHeaders).send({
+    const res = await req.post(PATH.BLOGS).set(commonHeaders).send({
       name: 'invalid name value',
       websiteUrl: 'invalid websiteUrl value'
     }).expect(400)
@@ -49,7 +49,7 @@ describe('/blogs', () => {
   })
 
   it('- POST should return 401', async () => {
-    await req.post("/blogs").expect(401)
+    await req.post(PATH.BLOGS).expect(401)
   })
 
   it('POST should create new blog', async () => {
@@ -60,7 +60,7 @@ describe('/blogs', () => {
       websiteUrl: 'https://correct-url.com'
     }
 
-    const res = await req.post('/blogs').set(commonHeaders).send(newBlog).expect(201)
+    const res = await req.post(PATH.BLOGS).set(commonHeaders).send(newBlog).expect(201)
 
     createdBlog = res.body
 
@@ -71,23 +71,23 @@ describe('/blogs', () => {
     expect(websiteUrl).toStrictEqual(newBlog.websiteUrl)
     expect(description).toStrictEqual(newBlog.description)
 
-    const res2 = await req.get('/blogs')
+    const res2 = await req.get(PATH.BLOGS)
     expect(res2.body.length).toBe(1)
   })
 
   it('- GET should return 404 when id is not correct', async () => {
-    await req.get('/blogs/incorrect-id').expect(404)
+    await req.get(`${PATH.BLOGS}/incorrect-id`).expect(404)
   })
 
   it('GET should return blog by its id', async () => {
-    const res = await req.get(`/blogs/${createdBlog.id}`).expect(200)
+    const res = await req.get(`${PATH.BLOGS}/${createdBlog.id}`).expect(200)
 
     expect(res.body.id).toStrictEqual(createdBlog.id)
   })
 
   it('- PUT should not update blog with incorrect data (name/description/websiteUrl)', async () => {
 
-    const res = await req.put(`/blogs/${createdBlog.id}`).set(commonHeaders).send({
+    const res = await req.put(`${PATH.BLOGS}/${createdBlog.id}`).set(commonHeaders).send({
       name: 'invalid name value',
       websiteUrl: 'invalid websiteUrl value'
     }).expect(400)
@@ -99,11 +99,11 @@ describe('/blogs', () => {
   })
 
   it('- PUT should return 401', async () => {
-    await req.put(`/blogs/${createdBlog.id}`).expect(401)
+    await req.put(`${PATH.BLOGS}/${createdBlog.id}`).expect(401)
   })
 
   it('- PUT should return 404 when id is not correct', async () => {
-    await req.put(`/blogs/incorrect-id`).set(commonHeaders).send({
+    await req.put(`${PATH.BLOGS}/incorrect-id`).set(commonHeaders).send({
       name: 'updated name',
       description: "updated description",
       websiteUrl: 'https://updated-url.com'
@@ -112,13 +112,13 @@ describe('/blogs', () => {
 
   it('PUT should update blog by id', async () => {
 
-    await req.put(`/blogs/${createdBlog.id}`).set(commonHeaders).send({
+    await req.put(`${PATH.BLOGS}/${createdBlog.id}`).set(commonHeaders).send({
       name: 'updated name',
       description: "updated description",
       websiteUrl: 'https://updated-url.com'
     }).expect(204)
 
-    const res = await req.get(`/blogs/${createdBlog.id}`).expect(200)
+    const res = await req.get(`${PATH.BLOGS}/${createdBlog.id}`).expect(200)
 
     expect(res.body.id).toStrictEqual(createdBlog.id)
     expect(res.body.name).toStrictEqual('updated name')
@@ -127,17 +127,17 @@ describe('/blogs', () => {
   })
 
   it('- DELETE should return 401', async () => {
-    await req.delete(`/blogs/${createdBlog.id}`).expect(401)
+    await req.delete(`${PATH.BLOGS}/${createdBlog.id}`).expect(401)
   })
 
   it('- DELETE should return 404 when blog-id is not found', async () => {
-    await req.delete("/blogs/incorrect-id").set(commonHeaders).expect(404)
+    await req.delete(`${PATH.BLOGS}/incorrect-id`).set(commonHeaders).expect(404)
   })
 
   it('DELETE blog by id', async () => {
-    await req.delete(`/blogs/${createdBlog.id}`).set(commonHeaders).expect(204)
+    await req.delete(`${PATH.BLOGS}/${createdBlog.id}`).set(commonHeaders).expect(204)
 
-    await req.get('/blogs').expect([])
+    await req.get(PATH.BLOGS).expect([])
   })
 
 })

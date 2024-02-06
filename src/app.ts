@@ -9,15 +9,21 @@ export const SETTINGS = {
   AUTH_CRED: process.env.AUTH_CRED,
   LOGIN_CRED: process.env.LOGIN_CRED,
   PASS_CRED: process.env.PASS_CRED,
-}
+} as const
+
+export const PATH = {
+  BLOGS: '/blogs',
+  POSTS: '/posts',
+  TESTING: '/testing/all-data'
+} as const
 
 export const app = express()
 
 app.use(json())
 
-app.use('/blogs', blogRoute)
+app.use(PATH.BLOGS, blogRoute)
 
-app.use('/posts', postRoute)
+app.use(PATH.POSTS, postRoute)
 
-app.use('/testing/all-data', testingAllDataRoute)
+app.use(PATH.TESTING, testingAllDataRoute)
 
