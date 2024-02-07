@@ -125,8 +125,6 @@ describe('/blogs', () => {
   })
 
   describe('GET request with query params', () => {
-    let blogs: Pagination<BlogViewModel>
-
     beforeAll(async () => {
       await req.delete(PATH.TESTING).expect(204)
       await createBlogsDTO(23)
