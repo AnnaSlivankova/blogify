@@ -1,24 +1,22 @@
-import {app} from "../src/app";
-import 'dotenv/config'
-import {agent} from "supertest";
+import {PATH} from "../src/app";
 import {BlogViewModel} from "../src/models/blog-models/output/blog-view-model";
 import {PostViewModel} from "../src/models/post-models/output/post-view-model";
-import {CreatePostModel} from "../src/models/post-models/input/create-post-model";
 import {MongoClient} from "mongodb";
+import {
+  blogDTO,
+  commonHeaders,
+  createPostDTO,
+  mongoURI,
+  paginatedEmptyResponse,
+  req
+} from "./tests-settings";
 
-const req = agent(app)
-
-const commonHeaders = {
-  "authorization": `Basic ${process.env.AUTH_CRED}`
-}
-
-const mongoURI = process.env.MONGO_URL
 
 describe('/posts', () => {
   let blog: BlogViewModel
-  let createdPost: PostViewModel
+  let post: PostViewModel
 
-  if(!mongoURI) {
+  if (!mongoURI) {
     return console.log('invalid mongoURI:', mongoURI)
   }
 
@@ -27,29 +25,25 @@ describe('/posts', () => {
   beforeAll(async () => {
     await client.connect()
 
-    await req.delete('/testing/all-data').expect(204)
+    await req.delete(PATH.TESTING).expect(204)
 
-    const res = await req.post('/blogs').set(commonHeaders).send({
-      name: 'some blog name',
-      description: 'from post tests',
-      websiteUrl: 'https://some-blog-url.com'
-    }).expect(201)
+    const res = await req.post(PATH.BLOGS).set(commonHeaders).send(blogDTO).expect(201)
 
     blog = res.body
   })
 
   afterAll(async () => {
-    await req.delete('/testing/all-data').expect(204)
+    await req.delete(PATH.TESTING).expect(204)
     await client.close()
   })
 
-  it('GET posts = []', async () => {
-    await req.get('/posts').expect([])
+  it('GET posts should return default pagination values and empty items[]', async () => {
+    await req.get(PATH.POSTS).expect(paginatedEmptyResponse)
   })
 
   it('- POST should not create post with incorrect data (title/shortDescription/content/blogId)', async () => {
 
-    const res = await req.post('/posts').set(commonHeaders).send({
+    const res = await req.post(PATH.POSTS).set(commonHeaders).send({
       title: '',
       content: '   ',
       blogId: 'invalid blogId value'
@@ -63,61 +57,48 @@ describe('/posts', () => {
   })
 
   it('- POST should return 401', async () => {
-    await req.post("/posts").expect(401)
+    await req.post(PATH.POSTS).set({'Authorization': 'scj32039wncw'}).set(createPostDTO(blog.id)).expect(401)
   })
 
   it('POST should create new post', async () => {
+    const res = await req.post(PATH.POSTS).set(commonHeaders).send(createPostDTO(blog.id)).expect(201)
 
-    const newPost: CreatePostModel = {
-      blogId: blog.id,
-      content: 'some content',
-      title: 'some title',
-      shortDescription: 'some short description'
-    }
-
-    const res = await req.post('/posts').set(commonHeaders).send(newPost).expect(201)
-
-    createdPost = res.body
+    post = res.body
 
     const {id, content, blogId, title, shortDescription, blogName} = res.body as PostViewModel
 
     expect(id).toBeDefined()
-    expect(content).toStrictEqual(newPost.content)
+    expect(content).toStrictEqual(post.content)
     expect(blogId).toStrictEqual(blog.id)
-    expect(title).toStrictEqual(newPost.title)
-    expect(shortDescription).toStrictEqual(newPost.shortDescription)
+    expect(title).toStrictEqual(post.title)
+    expect(shortDescription).toStrictEqual(post.shortDescription)
     expect(blogName).toStrictEqual(blog.name)
 
-    const res2 = await req.get('/posts')
-    expect(res2.body.length).toBe(1)
+    const allPostsFromDB = await req.get(PATH.POSTS)
+    expect(allPostsFromDB.body.items.length).toBe(1)
   })
 
   it('- GET should return 404 when id is not correct', async () => {
-    await req.get('/posts/incorrect-id').expect(404)
+    await req.get(`${PATH.POSTS}/incorrect-id`).expect(404)
   })
 
   it('GET should return post by its id', async () => {
-    const res = await req.get(`/posts/${createdPost.id}`).expect(200)
+    const res = await req.get(`${PATH.POSTS}/${post.id}`).expect(200)
 
-    expect(res.body.id).toStrictEqual(createdPost.id)
+    expect(res.body.id).toStrictEqual(post.id)
   })
 
   it('- PUT should return 401', async () => {
-    await req.put(`/posts/${createdPost.id}`).expect(401)
+    await req.put(`${PATH.POSTS}/${post.id}`).set({'Authorization': 'scj32039wncw'}).send(createPostDTO(post.id)).expect(401)
   })
 
   it('- PUT should return 404 when blogId is not correct', async () => {
-    await req.put(`/posts/incorrect-id`).set(commonHeaders).send({
-      blogId: blog.id,
-      content: 'some content',
-      title: 'some title',
-      shortDescription: 'some short description'
-    }).expect(404)
+    await req.put(`${PATH.POSTS}/incorrect-id`).set(commonHeaders).send(createPostDTO(blog.id)).expect(404)
   })
 
   it('- PUT should not update post with incorrect data (title/shortDescription/content/blogId)', async () => {
 
-    const res = await req.put(`/posts/${createdPost.id}`).set(commonHeaders).send({
+    const res = await req.put(`${PATH.POSTS}/${post.id}`).set(commonHeaders).send({
       blogId: blog.id,
       content: '',
       title: '   ',
@@ -131,14 +112,14 @@ describe('/posts', () => {
 
   it('PUT should update post by id', async () => {
 
-    await req.put(`/posts/${createdPost.id}`).set(commonHeaders).send({
+    await req.put(`${PATH.POSTS}/${post.id}`).set(commonHeaders).send({
       blogId: blog.id,
       content: 'updated content',
       title: 'updated title',
       shortDescription: 'updated short description'
     }).expect(204)
 
-    const res = await req.get(`/posts/${createdPost.id}`).expect(200)
+    const res = await req.get(`${PATH.POSTS}/${post.id}`).expect(200)
 
     expect(res.body.blogId).toStrictEqual(blog.id)
     expect(res.body.content).toStrictEqual('updated content')
@@ -147,17 +128,16 @@ describe('/posts', () => {
   })
 
   it('- DELETE should return 401', async () => {
-    await req.delete(`/blogs/${createdPost.id}`).expect(401)
+    await req.delete(`${PATH.POSTS}/${post.id}`).set({'Authorization': 'scj32039wncw'}).expect(401)
   })
 
   it('- DELETE should return 404 when post-id is not found', async () => {
-    await req.delete("/posts/incorrect-id").set(commonHeaders).expect(404)
+    await req.delete(`${PATH.POSTS}/incorrect-id`).set(commonHeaders).expect(404)
   })
 
-  it('DELETE post by id', async () => {
-    await req.delete(`/posts/${createdPost.id}`).set(commonHeaders).expect(204)
+  it('DELETE post by id should return default pagination values and empty items[]', async () => {
+    await req.delete(`${PATH.POSTS}/${post.id}`).set(commonHeaders).expect(204)
 
-    await req.get('/posts').expect([])
+    await req.get(PATH.POSTS).expect(paginatedEmptyResponse)
   })
-
 })
