@@ -1,43 +1,30 @@
-import {blogMapper} from "../models/blog-models/mapper/blog-mapper";
-import {BlogViewModel} from "../models/blog-models/output/blog-view-model";
 import {blogsCollection} from "../db/db";
 import {ObjectId} from "mongodb";
 import {UpdateBlogModel} from "../models/blog-models/input/update-blog-model";
 import {BlogDb} from "../models/blog-models/db/blog-db";
 
 export class BlogRepository {
-  static async getAll(): Promise<BlogViewModel[] | boolean> {
-    try {
-      const blogs = await blogsCollection.find({}).toArray()
-
-      return blogs.map(blogMapper)
-    } catch (e) {
-      return false
-    }
-  }
-
-  static async getById(id: string): Promise<BlogViewModel | boolean> {
+  static async getBlogById(id: string): Promise<BlogDb | null> {
     try {
       const blog = await blogsCollection.findOne({_id: new ObjectId(id)})
 
       if (!blog) {
-        return false
+        return null
       }
 
-      return blogMapper(blog)
+      return blog
     } catch (e) {
-      return false
+      return null
     }
   }
 
-  static async createBlog(createdData: BlogDb): Promise<BlogViewModel | null | boolean> {
+  static async createBlog(createdData: BlogDb): Promise<string | null> {
     try {
       const res = await blogsCollection.insertOne(createdData)
 
-      return this.getById(res.insertedId.toString())
-      // return res.insertedId.toString() //или вернуть айдишку созданного блога и в контроллере запросить созданный блог по этой айдишке
+      return res.insertedId.toString()
     } catch (e) {
-      return false
+      return null
     }
   }
 
