@@ -3,6 +3,7 @@ import {MongoClient} from "mongodb";
 import {BlogDb} from "../models/blog-models/db/blog-db";
 import 'dotenv/config'
 import {SETTINGS} from "../app";
+import {UserDb} from "../models/user-models/db/user-db";
 
 const uri = process.env.MONGO_URL
 
@@ -16,6 +17,7 @@ export const db = client.db('blogify-db')
 
 export const blogsCollection = db.collection<BlogDb>('blogs')
 export const postsCollection = db.collection<PostDb>('posts')
+export const usersCollection = db.collection<UserDb>('users')
 
 export const runDB = async () => {
   try {
