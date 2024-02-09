@@ -3,6 +3,8 @@ import {blogRoute} from "./routes/blog-route";
 import {postRoute} from "./routes/post-route";
 import {testingAllDataRoute} from "./routes/testing-all-data-route";
 import 'dotenv/config'
+import {userRoute} from "./routes/user-route";
+import {authRoute} from "./routes/auth-route";
 
 export const SETTINGS = {
   PORT: process.env.PORT,
@@ -14,6 +16,8 @@ export const SETTINGS = {
 export const PATH = {
   BLOGS: '/blogs',
   POSTS: '/posts',
+  USERS: '/users',
+  LOGIN: '/auth/login',
   TESTING: '/testing/all-data'
 } as const
 
@@ -25,5 +29,8 @@ app.use(PATH.BLOGS, blogRoute)
 
 app.use(PATH.POSTS, postRoute)
 
-app.use(PATH.TESTING, testingAllDataRoute)
+app.use(PATH.USERS, userRoute)
 
+app.use(PATH.LOGIN, authRoute)
+
+app.use(PATH.TESTING, testingAllDataRoute)
