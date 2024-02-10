@@ -3,6 +3,7 @@ import {UserViewModel} from "../models/user-models/output/user-view-model";
 import {UserDb} from "../models/user-models/db/user-db";
 import {UserRepository} from "../repositories/user-repository";
 import {BcryptService} from "./bcrypt-service";
+import {ObjectId, WithId} from "mongodb";
 
 export class UserService {
   static async createUser(createUserModel: CreateUserModel): Promise<UserViewModel | null> {
@@ -34,5 +35,15 @@ export class UserService {
     }
 
     return isUserDeleted
+  }
+
+  static async getUserById(userId: ObjectId): Promise<WithId<UserDb> | null> {
+    const user = await UserRepository.getUserById(userId)
+
+    if (!user) {
+      return null
+    }
+
+    return user
   }
 }

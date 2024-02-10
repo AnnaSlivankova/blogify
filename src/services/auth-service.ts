@@ -1,8 +1,10 @@
 import {AuthRepository} from "../repositories/auth-repository";
 import {BcryptService} from "./bcrypt-service";
+import {JwtService} from "./jwt-service";
+import {LoginOutputModel} from "../models/auth-models/login-output-model";
 
 export class AuthService {
-  static async login(loginOrEmail: string, password: string): Promise<null | boolean> {
+  static async login(loginOrEmail: string, password: string): Promise<null | LoginOutputModel> {
     const user = await AuthRepository.getSearchedUser(loginOrEmail)
 
     if (!user) {
@@ -15,6 +17,8 @@ export class AuthService {
       return null
     }
 
-    return isPassValid
+    const accessToken = await JwtService.createJWT(user)
+
+    return {accessToken}
   }
 }
