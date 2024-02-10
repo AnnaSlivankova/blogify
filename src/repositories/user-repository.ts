@@ -2,7 +2,7 @@ import {UserDb} from "../models/user-models/db/user-db";
 import {usersCollection} from "../db/db";
 import {UserViewModel} from "../models/user-models/output/user-view-model";
 import {userMapper} from "../models/user-models/mapper/user-mapper";
-import {ObjectId} from "mongodb";
+import {ObjectId, WithId} from "mongodb";
 
 export class UserRepository {
   static async createUser(createdData: UserDb): Promise<UserViewModel | null> {
@@ -28,6 +28,20 @@ export class UserRepository {
       return !!res.deletedCount
     } catch (e) {
       return false
+    }
+  }
+
+  static async getUserById(userId: ObjectId): Promise<null | WithId<UserDb>> {
+    try {
+      const user = await usersCollection.findOne({_id: userId})
+
+      if (!user) {
+        return null
+      }
+
+      return user
+    } catch (e) {
+      return null
     }
   }
 }

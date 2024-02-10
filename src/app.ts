@@ -5,19 +5,22 @@ import {testingAllDataRoute} from "./routes/testing-all-data-route";
 import 'dotenv/config'
 import {userRoute} from "./routes/user-route";
 import {authRoute} from "./routes/auth-route";
+import {commentRoute} from "./routes/comment-route";
 
 export const SETTINGS = {
   PORT: process.env.PORT,
   AUTH_CRED: process.env.AUTH_CRED,
   LOGIN_CRED: process.env.LOGIN_CRED,
   PASS_CRED: process.env.PASS_CRED,
+  JWT_SECRET: process.env.JWT_SECRET
 } as const
 
 export const PATH = {
   BLOGS: '/blogs',
   POSTS: '/posts',
   USERS: '/users',
-  LOGIN: '/auth/login',
+  AUTH: '/auth',
+  COMMENTS: '/comments',
   TESTING: '/testing/all-data'
 } as const
 
@@ -31,6 +34,8 @@ app.use(PATH.POSTS, postRoute)
 
 app.use(PATH.USERS, userRoute)
 
-app.use(PATH.LOGIN, authRoute)
+app.use(PATH.AUTH, authRoute)
+
+app.use(PATH.COMMENTS, commentRoute)
 
 app.use(PATH.TESTING, testingAllDataRoute)
