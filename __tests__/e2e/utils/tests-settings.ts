@@ -1,9 +1,9 @@
-import {app, PATH, SETTINGS} from "../src/app";
+import {app, PATH, SETTINGS} from "../../../src/app";
 import {agent} from "supertest";
-import 'dotenv/config'
-import {CreateBlogModel} from "../src/models/blog-models/input/create-blog-model";
-import {CreatePostModel} from "../src/models/post-models/input/create-post-model";
-import {BlogViewModel} from "../src/models/blog-models/output/blog-view-model";
+// import 'dotenv/config'
+import {CreateBlogModel} from "../../../src/models/blog-models/input/create-blog-model";
+import {CreatePostModel} from "../../../src/models/post-models/input/create-post-model";
+import {BlogViewModel} from "../../../src/models/blog-models/output/blog-view-model";
 
 export const req = agent(app)
 
@@ -11,7 +11,11 @@ export const commonHeaders = {
   "authorization": `Basic ${SETTINGS.AUTH_CRED}`
 }
 
-export const mongoURI = process.env.MONGO_URL
+
+//todo убрать mongoURI - не нужное вроде проверить в тестах blog/post
+
+// export const mongoURI = process.env.MONGO_URL
+export const mongoURI = SETTINGS.MONGO_URL
 
 export const paginatedEmptyResponse = {
   pagesCount: 0,

@@ -23,6 +23,7 @@ import {QueryCommentModal} from "../models/comment-models/input/query-comment-mo
 import {CommentQueryRepository} from "../repositories/comment-query-repository";
 import {CommentViewModel} from "../models/comment-models/output/CommentViewModel";
 import {PostRepository} from "../repositories/post-repository";
+import {idValidationMiddleware} from "../middlewares/id-validation-middleware";
 
 export const postRoute = Router({})
 
@@ -46,13 +47,8 @@ postRoute.get('/', async (req: RequestWithQuery<QueryPostModel>, res: Response<P
   res.status(200).send(posts)
 })
 
-postRoute.get('/:id', async (req: Request<{ id: string }>, res: Response<PostViewModel>) => {
+postRoute.get('/:id', idValidationMiddleware, async (req: Request<{ id: string }>, res: Response<PostViewModel>) => {
   const id = req.params.id
-
-  if (!ObjectId.isValid(id)) {
-    res.sendStatus(404)
-    return
-  }
 
   const post = await PostQueryRepository.getPostById(id)
 
@@ -117,13 +113,10 @@ postRoute.put('/:id', authMiddleware, postValidation(), async (req: RequestWithP
   res.sendStatus(204)
 })
 
-postRoute.delete('/:id', authMiddleware, async (req: Request<{ id: string }>, res: Response<void>) => {
+postRoute.delete('/:id', authMiddleware, idValidationMiddleware, async (req: Request<{
+  id: string
+}>, res: Response<void>) => {
   const id = req.params.id
-
-  if (!ObjectId.isValid(id)) {
-    res.sendStatus(404)
-    return
-  }
 
   const isPostDeleted = await PostService.deletePost(id)
 
@@ -135,15 +128,10 @@ postRoute.delete('/:id', authMiddleware, async (req: Request<{ id: string }>, re
   res.sendStatus(204)
 })
 
-postRoute.post('/:id/comments', authJwtMiddleware, commentValidation(), async (req: RequestWithParamsAndBody<{
+postRoute.post('/:id/comments', authJwtMiddleware, idValidationMiddleware, commentValidation(), async (req: RequestWithParamsAndBody<{
   id: string
 }, CreateCommentModel>, res: Response) => {
   const postId = req.params.id
-
-  if (!ObjectId.isValid(postId)) {
-    res.sendStatus(404)
-    return
-  }
 
   const newComment = {
     content: req.body.content
@@ -159,7 +147,7 @@ postRoute.post('/:id/comments', authJwtMiddleware, commentValidation(), async (r
   return res.status(201).send(createdComment)
 })
 
-postRoute.get('/:id/comments', async (req: RequestWithParamsAndQuery<{
+postRoute.get('/:id/comments', idValidationMiddleware, async (req: RequestWithParamsAndQuery<{
   id: string
 }, QueryCommentModal>, res: Response<Pagination<CommentViewModel>>) => {
   const sortData = {
@@ -171,13 +159,8 @@ postRoute.get('/:id/comments', async (req: RequestWithParamsAndQuery<{
 
   const id = req.params.id
 
-  if (!ObjectId.isValid(id)) {
-    res.sendStatus(404)
-    return
-  }
-
   const post = await PostRepository.getPostById(id)
-  if(!post) {
+  if (!post) {
     res.sendStatus(404)
     return
   }

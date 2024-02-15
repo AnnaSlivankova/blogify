@@ -7,7 +7,7 @@ import {authMiddleware} from "../middlewares/auth/auth-middleware";
 import {userValidation} from "../validators/user-validators";
 import {CreateUserModel} from "../models/user-models/input/create-user-model";
 import {UserService} from "../services/user-service";
-import {ObjectId} from "mongodb";
+import {idValidationMiddleware} from "../middlewares/id-validation-middleware";
 
 export const userRoute = Router({})
 
@@ -48,13 +48,10 @@ userRoute.post('/', authMiddleware, userValidation(), async (req: RequestWithBod
   res.status(201).send(user)
 })
 
-userRoute.delete('/:id', authMiddleware, async (req: Request<{ id: string }>, res: Response<void>) => {
+userRoute.delete('/:id', authMiddleware, idValidationMiddleware, async (req: Request<{
+  id: string
+}>, res: Response<void>) => {
   const id = req.params.id
-
-  if (!ObjectId.isValid(id)) {
-    res.sendStatus(404)
-    return
-  }
 
   const isUserDeleted = await UserService.deleteUser(id)
 

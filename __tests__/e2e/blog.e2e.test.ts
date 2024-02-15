@@ -1,8 +1,7 @@
-import {PATH} from "../src/app";
-import {BlogViewModel} from "../src/models/blog-models/output/blog-view-model";
+import {PATH} from "../../src/app";
+import {BlogViewModel} from "../../src/models/blog-models/output/blog-view-model";
 import {MongoClient} from "mongodb";
-import {blogDTO, commonHeaders, createBlogsDTO, mongoURI, paginatedEmptyResponse, req} from "./tests-settings";
-import {Pagination} from "../src/types";
+import {blogDTO, commonHeaders, createBlogsDTO, mongoURI, paginatedEmptyResponse, req} from "./utils/tests-settings";
 
 
 describe('/blogs', () => {
