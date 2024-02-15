@@ -3,22 +3,17 @@ import {authJwtMiddleware} from "../middlewares/auth/auth-jwt-middleware";
 import {commentValidation} from "../validators/comment-validators";
 import {RequestWithParamsAndBody} from "../types";
 import {UpdateCommentModel} from "../models/comment-models/input/update-comment-model";
-import {ObjectId} from "mongodb";
 import {CommentService} from "../services/comment-service";
 import {CommentQueryRepository} from "../repositories/comment-query-repository";
 import {CommentRepository} from "../repositories/comment-repository";
+import {idValidationMiddleware} from "../middlewares/id-validation-middleware";
 
 export const commentRoute = Router({})
 
-commentRoute.put('/:id', authJwtMiddleware, commentValidation(), async (req: RequestWithParamsAndBody<{
+commentRoute.put('/:id', authJwtMiddleware, idValidationMiddleware, commentValidation(), async (req: RequestWithParamsAndBody<{
   id: string
 }, UpdateCommentModel>, res: Response) => {
   const id = req.params.id
-
-  if (!ObjectId.isValid(id)) {
-    res.sendStatus(404)
-    return
-  }
 
   const commentForUpdate = await CommentRepository.getCommentById(id)
 
@@ -46,13 +41,10 @@ commentRoute.put('/:id', authJwtMiddleware, commentValidation(), async (req: Req
   res.sendStatus(204)
 })
 
-commentRoute.delete('/:id', authJwtMiddleware, async (req: Request<{ id: string }>, res: Response) => {
+commentRoute.delete('/:id', authJwtMiddleware, idValidationMiddleware, async (req: Request<{
+  id: string
+}>, res: Response) => {
   const id = req.params.id
-
-  if (!ObjectId.isValid(id)) {
-    res.sendStatus(404)
-    return
-  }
 
   const commentForDelete = await CommentRepository.getCommentById(id)
 
@@ -76,13 +68,8 @@ commentRoute.delete('/:id', authJwtMiddleware, async (req: Request<{ id: string 
   return res.sendStatus(204)
 })
 
-commentRoute.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
+commentRoute.get('/:id', idValidationMiddleware, async (req: Request<{ id: string }>, res: Response) => {
   const id = req.params.id
-
-  if (!ObjectId.isValid(id)) {
-    res.sendStatus(404)
-    return
-  }
 
   const comment = await CommentQueryRepository.getCommentById(id)
 

@@ -1,6 +1,6 @@
-import {PATH} from "../src/app";
-import {BlogViewModel} from "../src/models/blog-models/output/blog-view-model";
-import {PostViewModel} from "../src/models/post-models/output/post-view-model";
+import {PATH} from "../../src/app";
+import {BlogViewModel} from "../../src/models/blog-models/output/blog-view-model";
+import {PostViewModel} from "../../src/models/post-models/output/post-view-model";
 import {MongoClient} from "mongodb";
 import {
   blogDTO,
@@ -9,7 +9,7 @@ import {
   mongoURI,
   paginatedEmptyResponse,
   req
-} from "./tests-settings";
+} from "./utils/tests-settings";
 
 
 describe('/posts', () => {

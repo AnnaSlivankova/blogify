@@ -14,3 +14,5 @@ const passwordValidator = body('password').notEmpty().isString().trim().isLength
 const emailValidator = body('email').notEmpty().isString().trim().matches(/^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$/).withMessage('Invalid email value')
 
 export const userValidation = () => [loginValidator, passwordValidator, emailValidator, inputValidationMiddleware]
+
+export const emailValidation = () => [emailValidator, inputValidationMiddleware]

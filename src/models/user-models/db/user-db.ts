@@ -3,7 +3,10 @@ export type UserDb = {
   email: string
   createdAt: string
   hash: string
-  //token
-  //hash
-  //salt
+
+  emailConfirmation?: {
+    confirmationCode?: string
+    expirationDare?: Date
+    isConfirmed?: boolean
+  }
 }

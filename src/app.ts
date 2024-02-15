@@ -10,10 +10,15 @@ import {commentRoute} from "./routes/comment-route";
 export const SETTINGS = {
   PORT: process.env.PORT,
   AUTH_CRED: process.env.AUTH_CRED,
-  LOGIN_CRED: process.env.LOGIN_CRED,
-  PASS_CRED: process.env.PASS_CRED,
-  JWT_SECRET: process.env.JWT_SECRET
-} as const
+  LOGIN_CRED: process.env.LOGIN_CRED as string,
+  PASS_CRED: process.env.PASS_CRED as string,
+  JWT_SECRET: process.env.JWT_SECRET,
+
+  MONGO_URL: process.env.MONGO_URL as string,
+
+  CORP_EMAIL: process.env.CORP_EMAIL,
+  CORP_PASS: process.env.CORP_PASS
+}
 
 export const PATH = {
   BLOGS: '/blogs',

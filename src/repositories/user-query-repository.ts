@@ -1,8 +1,9 @@
 import {UserViewModel} from "../models/user-models/output/user-view-model";
 import {Pagination} from "../types";
 import {usersCollection} from "../db/db";
-import {SortDirection, WithId} from "mongodb";
-import {UserDb} from "../models/user-models/db/user-db";
+import {ObjectId, SortDirection} from "mongodb";
+import {userMapper} from "../models/user-models/mapper/user-mapper";
+import {AuthMeOutputModel} from "../models/auth-models/output/auth-me-output-model";
 
 export class UserQueryRepository {
   static async getAllUsers(sortData: SortData): Promise<Pagination<UserViewModel> | null> {
@@ -36,7 +37,7 @@ export class UserQueryRepository {
         page: pageNumber,
         pageSize,
         totalCount,
-        items: users.map(this.userMapper)
+        items: users.map(userMapper)
       }
 
     } catch (e) {
@@ -44,15 +45,25 @@ export class UserQueryRepository {
     }
   }
 
+  static async getUserById(userId: string): Promise<null | AuthMeOutputModel> {
+    try {
+      const user = await usersCollection.findOne({_id: new ObjectId(userId)})
 
-  static userMapper(user: WithId<UserDb>): UserViewModel {
-    return {
-      id: user._id.toString(),
-      email: user.email,
-      login: user.login,
-      createdAt: user.createdAt
+      if (!user) return null
+
+      return {email: user.email, login: user.login, userId: user._id.toString()}
+    } catch (e) {
+      return null
     }
   }
+
+  // private _userMapper(user: WithId<UserDb>): AuthMeOutputModel {
+  //   return {
+  //     id: user._id.toString(),
+  //     email: user.email,
+  //     login: user.login,
+  //   }
+  // }
 }
 
 type SortData = {
