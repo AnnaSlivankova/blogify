@@ -20,6 +20,7 @@ export const blogsCollection = db.collection<BlogDb>('blogs')
 export const postsCollection = db.collection<PostDb>('posts')
 export const usersCollection = db.collection<UserDb>('users')
 export const commentsCollection = db.collection<CommentDb>('comments')
+export const expiredRefreshTokensCollection = db.collection<{refreshToken:string}>('refreshTokens')
 
 export const runDB = async () => {
   try {

@@ -10,18 +10,48 @@ import {credsValidation} from "../validators/auth-validators";
 import {ConfirmEmailInputModel} from "../models/auth-models/input/confirmation-email-input-model";
 import {AuthMeOutputModel} from "../models/auth-models/output/auth-me-output-model";
 import {UserQueryRepository} from "../repositories/user-query-repository";
+import {authRefreshJwtMiddleware} from "../middlewares/auth/auth-refresh-jwt-middleware";
 
 export const authRoute = Router({})
 
 authRoute.post('/login', async (req: RequestWithBody<LoginInputModel>, res: Response) => {
-  const token = await AuthService.login(req.body.loginOrEmail, req.body.password)
+  const tokens = await AuthService.login(req.body.loginOrEmail, req.body.password)
 
-  if (!token) {
+  if (!tokens) {
     res.sendStatus(401)
     return
   }
 
-  res.status(200).send(token)
+  const {accessToken, refreshToken} = tokens
+
+  return res
+    .cookie('refreshToken', refreshToken, {httpOnly: true, secure: true})
+    .status(200)
+    .send({accessToken})
+})
+
+authRoute.post('/refresh-token', authRefreshJwtMiddleware, async (req: Request, res: Response) => {
+  const tokens = await AuthService.refreshTokens(req.cookies['refreshToken'], req.user!._id)
+
+  if (!tokens) {
+    res.sendStatus(401)
+    return
+  }
+
+  const {accessToken, refreshToken} = tokens
+
+  return res
+    .cookie('refreshToken', refreshToken, {httpOnly: true, secure: true})
+    .status(200)
+    .send({accessToken})
+})
+
+authRoute.post('/logout', authRefreshJwtMiddleware, async (req: Request, res: Response) => {
+  const isLogout = await AuthService.logout(req.cookies['refreshToken'])
+
+  if (!isLogout) return res.sendStatus(401)
+
+  return res.sendStatus(204)
 })
 
 authRoute.get('/me', authJwtMiddleware, async (req: Request, res: Response<AuthMeOutputModel>) => {

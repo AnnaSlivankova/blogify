@@ -1,19 +1,18 @@
-import {PATH} from "../../src/app";
-import {BlogViewModel} from "../../src/models/blog-models/output/blog-view-model";
+import {PATH, SETTINGS} from "../../src/app";
 import {MongoClient} from "mongodb";
-import {blogDTO, commonHeaders, createBlogsDTO, mongoURI, paginatedEmptyResponse, req} from "./utils/tests-settings";
+import {commonHeaders, req} from "../tests-settings";
+import {MongoMemoryServer} from "mongodb-memory-server";
+import {paginatedEmptyResponse, testSeeder} from "../test.seeder";
 
 
-describe('/blogs', () => {
-  if (!mongoURI) {
-    return console.log('invalid mongoURI:', mongoURI)
-  }
-
-  const client = new MongoClient(mongoURI)
+describe('BLOGS_E2E', () => {
+  let client: MongoClient
 
   beforeAll(async () => {
+    const mongoServer = await MongoMemoryServer.create()
+    SETTINGS.MONGO_URL = mongoServer.getUri()
+    client = new MongoClient(SETTINGS.MONGO_URL)
     await client.connect()
-    await req.delete(PATH.TESTING).expect(204)
   })
 
   afterAll(async () => {
@@ -22,14 +21,15 @@ describe('/blogs', () => {
   })
 
   describe('Testing blogs CRUDS', () => {
-    let createdBlog: BlogViewModel
+    beforeEach(async () => {
+      await req.delete(PATH.TESTING).expect(204)
+    })
 
     it('GET blogs should return default pagination values and empty items[]', async () => {
       await req.get(PATH.BLOGS).expect(paginatedEmptyResponse)
     })
 
     it('- POST should not create blog with incorrect data (name/description/websiteUrl)', async () => {
-
       const res = await req.post(PATH.BLOGS).set(commonHeaders).send({
         name: 'invalid name value',
         websiteUrl: 'invalid websiteUrl value'
@@ -46,16 +46,17 @@ describe('/blogs', () => {
     })
 
     it('POST should create new blog', async () => {
-      const res = await req.post(PATH.BLOGS).set(commonHeaders).send(blogDTO).expect(201)
+      const blogDto = testSeeder.createBlogDto()
+      const res = await req.post(PATH.BLOGS).set(commonHeaders).send(blogDto).expect(201)
 
-      createdBlog = res.body
+      // createdBlog = res.body
 
-      const {id, websiteUrl, description, name} = createdBlog
+      const {id, websiteUrl, description, name} = res.body
 
       expect(id).toBeDefined()
-      expect(name).toStrictEqual(blogDTO.name)
-      expect(websiteUrl).toStrictEqual(blogDTO.websiteUrl)
-      expect(description).toStrictEqual(blogDTO.description)
+      expect(name).toStrictEqual(blogDto.name)
+      expect(websiteUrl).toStrictEqual(blogDto.websiteUrl)
+      expect(description).toStrictEqual(blogDto.description)
 
       const allBlogsFromDB = await req.get(PATH.BLOGS)
       expect(allBlogsFromDB.body.items.length).toBe(1)
@@ -66,13 +67,14 @@ describe('/blogs', () => {
     })
 
     it('GET should return blog by its id', async () => {
+      const createdBlog = await testSeeder.createBlogDtoInDb()
       const res = await req.get(`${PATH.BLOGS}/${createdBlog.id}`).expect(200)
 
       expect(res.body.id).toStrictEqual(createdBlog.id)
     })
 
     it('- PUT should not update blog with incorrect data (name/description/websiteUrl)', async () => {
-
+      const createdBlog = await testSeeder.createBlogDtoInDb()
       const res = await req.put(`${PATH.BLOGS}/${createdBlog.id}`).set(commonHeaders).send({
         name: 'invalid name value',
         websiteUrl: 'invalid websiteUrl value'
@@ -85,14 +87,16 @@ describe('/blogs', () => {
     })
 
     it('- PUT should return 401', async () => {
-      await req.put(`${PATH.BLOGS}/${createdBlog.id}`).set({'Authorization': 'scj32039wncw'}).send(blogDTO).expect(401)
+      const createdBlog = await testSeeder.createBlogDtoInDb()
+      await req.put(`${PATH.BLOGS}/${createdBlog.id}`).set({'Authorization': 'scj32039wncw'}).send({}).expect(401)
     })
 
     it('- PUT should return 404 when id is not correct', async () => {
-      await req.put(`${PATH.BLOGS}/incorrect-id`).set(commonHeaders).send(blogDTO).expect(404)
+      await req.put(`${PATH.BLOGS}/incorrect-id`).set(commonHeaders).send({}).expect(404)
     })
 
     it('PUT should update blog by id', async () => {
+      const createdBlog = await testSeeder.createBlogDtoInDb()
 
       await req.put(`${PATH.BLOGS}/${createdBlog.id}`).set(commonHeaders).send({
         name: 'updated name',
@@ -109,6 +113,7 @@ describe('/blogs', () => {
     })
 
     it('- DELETE should return 401', async () => {
+      const createdBlog = await testSeeder.createBlogDtoInDb()
       await req.delete(`${PATH.BLOGS}/${createdBlog.id}`).set({'Authorization': 'scj32039wncw'}).expect(401)
     })
 
@@ -117,6 +122,7 @@ describe('/blogs', () => {
     })
 
     it('DELETE blog by id should return default pagination values and empty items[]', async () => {
+      const createdBlog = await testSeeder.createBlogDtoInDb()
       await req.delete(`${PATH.BLOGS}/${createdBlog.id}`).set(commonHeaders).expect(204)
 
       await req.get(PATH.BLOGS).expect(paginatedEmptyResponse)
@@ -126,11 +132,7 @@ describe('/blogs', () => {
   describe('GET request with query params', () => {
     beforeAll(async () => {
       await req.delete(PATH.TESTING).expect(204)
-      await createBlogsDTO(23)
-    })
-
-    afterAll(async () => {
-      await req.delete(PATH.TESTING).expect(204)
+      await testSeeder.createBlogsDtosInDb(23)
     })
 
     it('GET should return array with 10 items and pageCount 3', async () => {
@@ -178,21 +180,13 @@ describe('/blogs', () => {
     let blogId: string
 
     beforeAll(async () => {
-      const res = await req.post(PATH.BLOGS).set(commonHeaders).send(blogDTO).expect(201)
-
+      await req.delete(PATH.TESTING).expect(204)
+      const res = await req.post(PATH.BLOGS).set(commonHeaders).send(testSeeder.createBlogDto()).expect(201)
       blogId = res.body.id
     })
 
-    afterAll(async () => {
-      await req.delete(PATH.TESTING).expect(204)
-    })
-
     it('- POST should not create post and return 401 status', async () => {
-      await req.post(`${PATH.BLOGS}/${blogId}/posts`).set({'Authorization': 'ndjids7k3j'}).send({
-        content: 'some content',
-        title: 'some title',
-        shortDescription: 'some short description'
-      }).expect(401)
+      await req.post(`${PATH.BLOGS}/${blogId}/posts`).set({'Authorization': 'ndjids7k3j'}).send({}).expect(401)
     })
 
     it('- POST should not create post with incorrect input-data', async () => {
@@ -208,11 +202,7 @@ describe('/blogs', () => {
     })
 
     it('POST should create post for specific blog', async () => {
-      const res = await req.post(`${PATH.BLOGS}/${blogId}/posts`).set(commonHeaders).send({
-        content: 'some content',
-        title: 'some title',
-        shortDescription: 'some short description'
-      }).expect(201)
+      const res = await req.post(`${PATH.BLOGS}/${blogId}/posts`).set(commonHeaders).send(testSeeder.createPostDto(blogId)).expect(201)
 
       expect(res.body.blogId).toStrictEqual(blogId)
       expect(res.body.id).toBeDefined()
@@ -223,11 +213,7 @@ describe('/blogs', () => {
     })
 
     it('GET should return all posts for specific blog', async () => {
-      await req.post(`${PATH.BLOGS}/${blogId}/posts`).set(commonHeaders).send({
-        content: 'some content',
-        title: 'some title',
-        shortDescription: 'some short description'
-      }).expect(201)
+      await req.post(`${PATH.BLOGS}/${blogId}/posts`).set(commonHeaders).send(testSeeder.createPostDto(blogId)).expect(201)
 
       const res = await req.get(`${PATH.BLOGS}/${blogId}/posts`).expect(200)
 
