@@ -6,6 +6,7 @@ import 'dotenv/config'
 import {userRoute} from "./routes/user-route";
 import {authRoute} from "./routes/auth-route";
 import {commentRoute} from "./routes/comment-route";
+import cookieParser from "cookie-parser";
 
 export const SETTINGS = {
   PORT: process.env.PORT,
@@ -32,6 +33,7 @@ export const PATH = {
 export const app = express()
 
 app.use(json())
+app.use(cookieParser())
 
 app.use(PATH.BLOGS, blogRoute)
 

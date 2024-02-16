@@ -8,26 +8,50 @@ import {UserRepository} from "../../repositories/user-repository";
 import {emailAdapter} from "../../adapters/email-adapter";
 import {v4 as uuidv4} from 'uuid';
 import {add, isBefore} from "date-fns";
-import {WithId} from "mongodb";
+import {ObjectId, WithId} from "mongodb";
 import {generateConfirmationEmail} from "./generate-confirmation-email";
+import {UserService} from "../user-service";
 
 export class AuthService {
-  static async login(loginOrEmail: string, password: string): Promise<null | LoginOutputModel> {
+  static async login(loginOrEmail: string, password: string): Promise<null | LoginOutputModel & {
+    refreshToken: string
+  }> {
     const user = await AuthRepository.getSearchedUser(loginOrEmail)
-
-    if (!user) {
-      return null
-    }
+    if (!user) return null
 
     const isPassValid = await BcryptService.compareHashes(password, user.hash)
+    if (!isPassValid) return null
 
-    if (!isPassValid) {
-      return null
+    const accessToken = await JwtService.createJWT(user, '10s')
+    const refreshToken = await JwtService.createJWT(user, '20s')
+
+    return {accessToken, refreshToken}
+  }
+
+  static async refreshTokens(oldRefreshToken: string, userId: ObjectId): Promise<null | LoginOutputModel & {
+    refreshToken: string
+  }> {
+    const [isAlreadyInBlackList, isOldTokenInBlackList, user] = await Promise.all([
+      AuthRepository.findRefreshTokenInBlackList(oldRefreshToken),
+      AuthRepository.putTokenInBlackList(oldRefreshToken),
+      UserService.getUserById(userId)
+    ]);
+
+    if (isAlreadyInBlackList || !isOldTokenInBlackList || !user) {
+      return null;
     }
 
-    const accessToken = await JwtService.createJWT(user)
+    const accessToken = await JwtService.createJWT(user, '10s')
+    const refreshToken = await JwtService.createJWT(user, '20s')
 
-    return {accessToken}
+    return {accessToken, refreshToken}
+  }
+
+  static async logout(token: string): Promise<boolean> {
+    const isAlreadyInBlackList = await AuthRepository.findRefreshTokenInBlackList(token)
+    if (isAlreadyInBlackList) return false
+
+    return await AuthRepository.putTokenInBlackList(token)
   }
 
   static async register(registerUserModel: RegistrationInputModel): Promise<WithId<UserDb> | null> {
@@ -52,9 +76,7 @@ export class AuthService {
 
     const createdUser = await AuthRepository.createUser(newUser)
 
-    if (!createdUser) {
-      return null
-    }
+    if (!createdUser) return null
 
     try {
       await emailAdapter.sendEmail(email, 'Confirm registration', generateConfirmationEmail(createdUser!._id.toString(), createdUser.emailConfirmation!.confirmationCode!))
@@ -84,10 +106,7 @@ export class AuthService {
     }
 
     const isConfStatusChanged = await AuthRepository.updateConfirmationStatus(user._id)
-
-    if (!isConfStatusChanged) {
-      return null
-    }
+    if (!isConfStatusChanged) return null
 
     return isConfStatusChanged
   }
@@ -96,21 +115,16 @@ export class AuthService {
   static async resendEmail(email: string): Promise<null | boolean> {
     const user = await AuthRepository.getSearchedUser(email)
 
-    if (!user) {
-      return null
-    }
+    if (!user) return null
 
-    if (user.emailConfirmation!.isConfirmed) {
-      return null
-    }
+    if (user.emailConfirmation!.isConfirmed) return null
 
     const newCode = uuidv4()
 
     const isConfCodeUpdated = await AuthRepository.updateConfirmationCode(user._id, newCode)
 
-    if (!isConfCodeUpdated) {
-      return false
-    }
+    if (!isConfCodeUpdated) return false
+
 
     try {
       await emailAdapter.sendEmail(email, 'Confirm registration', generateConfirmationEmail(user._id.toString(), newCode))

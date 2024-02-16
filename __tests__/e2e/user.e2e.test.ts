@@ -1,11 +1,10 @@
 import {MongoMemoryServer} from "mongodb-memory-server";
 import {PATH, SETTINGS} from "../../src/app";
 import {MongoClient} from "mongodb";
-import {commonHeaders, req} from "./utils/tests-settings";
-import {testingDtosCreator} from "./utils/testingDtosCreator";
-import {createUserDto, createUsersDtos} from "./utils/createUsers";
+import {commonHeaders, req} from "../tests-settings";
+import {testSeeder} from "../test.seeder";
 
-describe('USERS_TESTS', () => {
+describe('USERS_E2E', () => {
   let client: MongoClient
 
   beforeAll(async () => {
@@ -15,75 +14,78 @@ describe('USERS_TESTS', () => {
     await client.connect()
   })
 
-  beforeEach(async () => {
-    await req.delete(PATH.TESTING).expect(204)
-  })
-
   afterAll(async () => {
+    await req.delete(PATH.TESTING).expect(204)
     await client.close()
   })
 
-  it('shouldn`t create user without authorization: STATUS 401', async () => {
-    await req
-      .post(PATH.USERS)
-      .send()
-      .expect(401)
-  })
-
-  it('should create user with correct data and return it: STATUS 201', async () => {
-    const userDto = testingDtosCreator.createUserDto()
-
-    const res = await req
-      .post(PATH.USERS)
-      .auth(SETTINGS.LOGIN_CRED, SETTINGS.PASS_CRED, {type: 'basic'})
-      .send(userDto)
-      .expect(201)
-
-    expect(res.body).toBeTruthy()
-  })
-
-  it('should`n create user with incorrect data and return errorsMessages[]: STATUS 400', async () => {
-    const userDto = testingDtosCreator.createUserDto()
-
-    const res = await req
-      .post(PATH.USERS)
-      .auth(SETTINGS.LOGIN_CRED, SETTINGS.PASS_CRED, {type: 'basic'})
-      .send({...userDto, email: 'invalid'})
-      .expect(400)
-
-    expect(res.body.errorsMessages.length).toBe(1)
-  })
-
-  it('shouldn`t delete user without authorization: STATUS 401', async () => {
-    const user = await createUserDto()
-
-    await req
-      .delete(`${PATH.USERS}/${user.id}`)
-      .expect(401)
-  })
-
-  it('shouldn`t delete user with incorrect id: STATUS 404', async () => {
-    await req
-      .delete(`${PATH.USERS}/incorrectId`)
-      .set(commonHeaders)
-      .expect(404)
-  })
-
-  it('should delete user by id: STATUS 204', async () => {
-    const user = await createUserDto()
-
-    await req
-      .delete(`${PATH.USERS}/${user.id}`)
-      .set(commonHeaders)
-      .expect(204)
-  })
-
-  describe('GET USERS', () => {
+  describe('Testing users CRUDS', () => {
     beforeEach(async () => {
-      await createUsersDtos(15)
+      await req.delete(PATH.TESTING).expect(204)
     })
 
-    it('should return users[] without authorization: STATUS 401', async () => {
+    it('shouldn`t create user without authorization: STATUS 401', async () => {
+      await req
+        .post(PATH.USERS)
+        .send()
+        .expect(401)
+    })
+
+    it('should create user with correct data and return it: STATUS 201', async () => {
+      const userDto = testSeeder.createUserDto()
+
+      const res = await req
+        .post(PATH.USERS)
+        .auth(SETTINGS.LOGIN_CRED, SETTINGS.PASS_CRED, {type: 'basic'})
+        .send(userDto)
+        .expect(201)
+
+      expect(res.body).toBeTruthy()
+    })
+
+    it('should`n create user with incorrect data and return errorsMessages[]: STATUS 400', async () => {
+      const userDto = testSeeder.createUserDto()
+
+      const res = await req
+        .post(PATH.USERS)
+        .auth(SETTINGS.LOGIN_CRED, SETTINGS.PASS_CRED, {type: 'basic'})
+        .send({...userDto, email: 'invalid'})
+        .expect(400)
+
+      expect(res.body.errorsMessages.length).toBe(1)
+    })
+
+    it('shouldn`t delete user without authorization: STATUS 401', async () => {
+      const user = await testSeeder.createUserDtoInDb()
+
+      await req
+        .delete(`${PATH.USERS}/${user.id}`)
+        .expect(401)
+    })
+
+    it('shouldn`t delete user with incorrect id: STATUS 404', async () => {
+      await req
+        .delete(`${PATH.USERS}/incorrectId`)
+        .set(commonHeaders)
+        .expect(404)
+    })
+
+    it('should delete user by id: STATUS 204', async () => {
+      const user = await testSeeder.createUserDtoInDb()
+
+      await req
+        .delete(`${PATH.USERS}/${user.id}`)
+        .set(commonHeaders)
+        .expect(204)
+    })
+  })
+
+  describe('GET request with query params', () => {
+    beforeAll(async () => {
+      await testSeeder.createUsersDtosInDb(15)
+    })
+
+    it('should not return users[] without authorization: STATUS 401', async () => {
       await req
         .get(PATH.USERS)
         .expect(401)
