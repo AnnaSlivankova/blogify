@@ -11,11 +11,12 @@ import {ConfirmEmailInputModel} from "../models/auth-models/input/confirmation-e
 import {AuthMeOutputModel} from "../models/auth-models/output/auth-me-output-model";
 import {UserQueryRepository} from "../repositories/user-query-repository";
 import {authRefreshJwtMiddleware} from "../middlewares/auth/auth-refresh-jwt-middleware";
+import {customRateLimitMiddleware} from "../middlewares/auth/custom-rate-limit-middleware";
 
 export const authRoute = Router({})
 
-authRoute.post('/login', async (req: RequestWithBody<LoginInputModel>, res: Response) => {
-  const tokens = await AuthService.login(req.body.loginOrEmail, req.body.password)
+authRoute.post('/login', customRateLimitMiddleware, async (req: RequestWithBody<LoginInputModel>, res: Response) => {
+  const tokens = await AuthService.login(req.body.loginOrEmail, req.body.password, req.ip!, req.headers["user-agent"]!)
 
   if (!tokens) {
     res.sendStatus(401)
@@ -31,10 +32,13 @@ authRoute.post('/login', async (req: RequestWithBody<LoginInputModel>, res: Resp
 })
 
 authRoute.post('/refresh-token', authRefreshJwtMiddleware, async (req: Request, res: Response) => {
-  const tokens = await AuthService.refreshTokens(req.cookies['refreshToken'], req.user!._id)
+  const deviceId = req.user!.deviceId as string
+  const userId = req.user!._id
+
+  const tokens = await AuthService.refreshTokens(req.cookies['refreshToken'], userId, deviceId)
 
   if (!tokens) {
-    res.sendStatus(401)
+    res.sendStatus(500)
     return
   }
 
@@ -47,7 +51,8 @@ authRoute.post('/refresh-token', authRefreshJwtMiddleware, async (req: Request, 
 })
 
 authRoute.post('/logout', authRefreshJwtMiddleware, async (req: Request, res: Response) => {
-  const isLogout = await AuthService.logout(req.cookies['refreshToken'])
+  const deviceId = req.user!.deviceId as string
+  const isLogout = await AuthService.logout(deviceId)
 
   if (!isLogout) return res.sendStatus(401)
 
@@ -55,7 +60,6 @@ authRoute.post('/logout', authRefreshJwtMiddleware, async (req: Request, res: Re
 })
 
 authRoute.get('/me', authJwtMiddleware, async (req: Request, res: Response<AuthMeOutputModel>) => {
-  // const user = await UserRepository.getUserById(req.user!._id)
   const user = await UserQueryRepository.getUserById(req.user!._id.toString())
 
   if (!user) {
@@ -63,11 +67,10 @@ authRoute.get('/me', authJwtMiddleware, async (req: Request, res: Response<AuthM
     return
   }
 
-  // return res.status(200).send({email: user.email, login: user.login, userId: user._id.toString()})
   return res.status(200).send(user)
 })
 
-authRoute.post('/registration', credsValidation(), async (req: RequestWithBody<RegistrationInputModel>, res: Response) => {
+authRoute.post('/registration', credsValidation(), customRateLimitMiddleware, async (req: RequestWithBody<RegistrationInputModel>, res: Response) => {
   const user = AuthService.register(req.body)
 
   if (!user) {
@@ -78,7 +81,7 @@ authRoute.post('/registration', credsValidation(), async (req: RequestWithBody<R
   res.sendStatus(204)
 })
 
-authRoute.post('/registration-confirmation', async (req: RequestWithBody<ConfirmEmailInputModel>, res: Response) => {
+authRoute.post('/registration-confirmation', customRateLimitMiddleware, async (req: RequestWithBody<ConfirmEmailInputModel>, res: Response) => {
   const isConfirmed = await AuthService.confirmEmail(req.body.code)
 
   if (!isConfirmed) {
@@ -89,7 +92,7 @@ authRoute.post('/registration-confirmation', async (req: RequestWithBody<Confirm
   res.sendStatus(204)
 })
 
-authRoute.post('/registration-email-resending', emailValidation(), async (req: RequestWithBody<ResendEmailInputModel>, res: Response) => {
+authRoute.post('/registration-email-resending', emailValidation(), customRateLimitMiddleware, async (req: RequestWithBody<ResendEmailInputModel>, res: Response) => {
   const resentedEmail = await AuthService.resendEmail(req.body.email)
 
   if (resentedEmail === null) {

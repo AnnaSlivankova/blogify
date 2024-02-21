@@ -1,4 +1,4 @@
-import {expiredRefreshTokensCollection, usersCollection} from "../db/db";
+import {usersCollection} from "../db/db";
 import {UserDb} from "../models/user-models/db/user-db";
 import {ObjectId, WithId} from "mongodb";
 
@@ -70,28 +70,6 @@ export class AuthRepository {
       const res = await usersCollection.updateOne({_id}, {$set: {'emailConfirmation.confirmationCode': newCode}})
 
       return !!res.matchedCount
-    } catch (e) {
-      return false
-    }
-  }
-
-  static async putTokenInBlackList(refreshToken: string): Promise<boolean> {
-    try {
-      const res = await expiredRefreshTokensCollection.insertOne({refreshToken})
-
-      return !!res.insertedId
-    } catch (e) {
-      return false
-    }
-  }
-
-  static async findRefreshTokenInBlackList(token: string): Promise<boolean> {
-    try {
-      const res = await expiredRefreshTokensCollection.findOne({
-        'refreshToken': token
-      })
-
-      return !!res
     } catch (e) {
       return false
     }
