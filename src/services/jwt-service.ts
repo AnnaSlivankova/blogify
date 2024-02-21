@@ -18,18 +18,47 @@ export class JwtService {
     }
   }
 
-  static async validateToken(token: string): Promise<boolean | string> {
+  static async validateToken(token: string): Promise<boolean | PayloadWithConvertedDates> {
     try {
       const decodedToken: any = jwt.verify(token, SETTINGS.JWT_SECRET!)
 
-      const expDate = new Date(decodedToken.exp * 1000)
-      const isExpired = expDate < new Date()
-      if(isExpired) return false
+      const deviceId = decodedToken.deviceId
+      const userId = decodedToken.userId
+      const iat = new Date(decodedToken.iat * 1000).toISOString()
+      const exp = new Date(decodedToken.exp * 1000).toISOString()
 
-      return decodedToken.userId
+      return {deviceId, userId, iat, exp}
     } catch (e) {
       console.log('validateToken', false)
       return false
     }
   }
+
+  static async getExpirationDate(token: string): Promise<string | null> {
+    try {
+      const decodedToken: any = jwt.decode(token)
+
+      return new Date(decodedToken.exp * 1000).toISOString()
+    } catch (e) {
+      console.log('getExpirationDate failed')
+      return null
+    }
+  }
+
+  static async createJWTRefreshToken(payload: RefreshPayload, exp: string): Promise<string> {
+    return jwt.sign(payload, SETTINGS.JWT_SECRET!, {expiresIn: exp})
+  }
+}
+
+type RefreshPayload = {
+  deviceId: string
+  userId: string
+  sessionId?: string;
+}
+
+export type PayloadWithConvertedDates = {
+  deviceId: string
+  userId: string
+  iat: string
+  exp: string
 }

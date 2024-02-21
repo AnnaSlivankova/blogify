@@ -11,9 +11,11 @@ import {add, isBefore} from "date-fns";
 import {ObjectId, WithId} from "mongodb";
 import {generateConfirmationEmail} from "./generate-confirmation-email";
 import {UserService} from "../user-service";
+import {DeviceAuthSessionsDb} from "../../models/device-auth-sessions-models/db/device-auth-sessions-db";
+import {SecurityDevicesRepository} from "../../repositories/security-devices-repository";
 
 export class AuthService {
-  static async login(loginOrEmail: string, password: string): Promise<null | LoginOutputModel & {
+  static async login(loginOrEmail: string, password: string, ip: string, deviceName: string): Promise<null | LoginOutputModel & {
     refreshToken: string
   }> {
     const user = await AuthRepository.getSearchedUser(loginOrEmail)
@@ -22,36 +24,58 @@ export class AuthService {
     const isPassValid = await BcryptService.compareHashes(password, user.hash)
     if (!isPassValid) return null
 
-    const accessToken = await JwtService.createJWT(user, '10s')
-    const refreshToken = await JwtService.createJWT(user, '20s')
-
-    return {accessToken, refreshToken}
-  }
-
-  static async refreshTokens(oldRefreshToken: string, userId: ObjectId): Promise<null | LoginOutputModel & {
-    refreshToken: string
-  }> {
-    const [isAlreadyInBlackList, isOldTokenInBlackList, user] = await Promise.all([
-      AuthRepository.findRefreshTokenInBlackList(oldRefreshToken),
-      AuthRepository.putTokenInBlackList(oldRefreshToken),
-      UserService.getUserById(userId)
-    ]);
-
-    if (isAlreadyInBlackList || !isOldTokenInBlackList || !user) {
-      return null;
+    const deviceId = uuidv4()
+    const refreshTokenPayload = {
+      deviceId,
+      userId: user._id.toString(),
     }
 
     const accessToken = await JwtService.createJWT(user, '10s')
-    const refreshToken = await JwtService.createJWT(user, '20s')
+    const refreshToken = await JwtService.createJWTRefreshToken(refreshTokenPayload, '20d')
+
+    const expDate = await JwtService.getExpirationDate(refreshToken)
+    if (!expDate) return null
+
+    const sessionData: DeviceAuthSessionsDb = {
+      issuedAt: expDate,
+      userId: user._id.toString(),
+      ip,
+      deviceId,
+      deviceName: deviceName ?? 'unknown',
+      lastActiveDate: new Date().toISOString()
+    }
+
+    const isSessionSaved = await SecurityDevicesRepository.saveDeviceSession(sessionData)
+    if (!isSessionSaved) return null
 
     return {accessToken, refreshToken}
   }
 
-  static async logout(token: string): Promise<boolean> {
-    const isAlreadyInBlackList = await AuthRepository.findRefreshTokenInBlackList(token)
-    if (isAlreadyInBlackList) return false
+  static async refreshTokens(oldRefreshToken: string, userId: ObjectId, deviceId: string): Promise<null | LoginOutputModel & {
+    refreshToken: string
+  }> {
+    const user = await UserService.getUserById(userId)
+    if (!user) return null
 
-    return await AuthRepository.putTokenInBlackList(token)
+    const accessToken = await JwtService.createJWT(user, '10s')
+    const refreshToken = await JwtService.createJWTRefreshToken({
+      deviceId,
+      userId: user._id.toString(),
+    }, '20d')
+
+    const expDate = await JwtService.getExpirationDate(refreshToken)
+    if (!expDate) return null
+
+    const lastActiveDate = new Date().toISOString()
+
+    const isSessionUpdate = await SecurityDevicesRepository.updateDeviceSession(expDate, lastActiveDate, userId.toString(), deviceId)
+    if (!isSessionUpdate) return null
+
+    return {accessToken, refreshToken}
+  }
+
+  static async logout(deviceId: string): Promise<boolean> {
+    return await SecurityDevicesRepository.deleteSessionByDeviceId(deviceId)
   }
 
   static async register(registerUserModel: RegistrationInputModel): Promise<WithId<UserDb> | null> {
@@ -110,7 +134,6 @@ export class AuthService {
 
     return isConfStatusChanged
   }
-
 
   static async resendEmail(email: string): Promise<null | boolean> {
     const user = await AuthRepository.getSearchedUser(email)

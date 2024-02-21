@@ -7,6 +7,7 @@ import {userRoute} from "./routes/user-route";
 import {authRoute} from "./routes/auth-route";
 import {commentRoute} from "./routes/comment-route";
 import cookieParser from "cookie-parser";
+import {securityDevicesRoute} from "./routes/security-devices-route";
 
 export const SETTINGS = {
   PORT: process.env.PORT,
@@ -27,6 +28,7 @@ export const PATH = {
   USERS: '/users',
   AUTH: '/auth',
   COMMENTS: '/comments',
+  SECURITY: '/security',
   TESTING: '/testing/all-data'
 } as const
 
@@ -36,13 +38,10 @@ app.use(json())
 app.use(cookieParser())
 
 app.use(PATH.BLOGS, blogRoute)
-
 app.use(PATH.POSTS, postRoute)
-
 app.use(PATH.USERS, userRoute)
-
 app.use(PATH.AUTH, authRoute)
-
 app.use(PATH.COMMENTS, commentRoute)
+app.use(`${PATH.SECURITY}/devices`, securityDevicesRoute)
 
 app.use(PATH.TESTING, testingAllDataRoute)

@@ -5,6 +5,8 @@ import 'dotenv/config'
 import {SETTINGS} from "../app";
 import {UserDb} from "../models/user-models/db/user-db";
 import {CommentDb} from "../models/comment-models/db/comment-db";
+import {DeviceAuthSessionsDb} from "../models/device-auth-sessions-models/db/device-auth-sessions-db";
+import {ApiRequestsHistoryDb} from "../models/device-auth-sessions-models/db/api-requests-history-db";
 
 const uri = process.env.MONGO_URL
 
@@ -20,7 +22,8 @@ export const blogsCollection = db.collection<BlogDb>('blogs')
 export const postsCollection = db.collection<PostDb>('posts')
 export const usersCollection = db.collection<UserDb>('users')
 export const commentsCollection = db.collection<CommentDb>('comments')
-export const expiredRefreshTokensCollection = db.collection<{refreshToken:string}>('refreshTokens')
+export const deviceAuthSessionsCollection = db.collection<DeviceAuthSessionsDb>('deviceAuthSessions')
+export const apiRequestsHistoryCollection = db.collection<ApiRequestsHistoryDb>('apiRequestsHistory')
 
 export const runDB = async () => {
   try {
