@@ -3,6 +3,7 @@ import {PATH, SETTINGS} from "../../src/app";
 import {MongoClient} from "mongodb";
 import {commonHeaders, req} from "../tests-settings";
 import {testSeeder} from "../test.seeder";
+import {SecurityDevicesService} from "../../src/services/security-devices-service";
 
 describe('USERS_E2E', () => {
   let client: MongoClient
@@ -17,6 +18,10 @@ describe('USERS_E2E', () => {
   afterAll(async () => {
     await req.delete(PATH.TESTING).expect(204)
     await client.close()
+  })
+
+  beforeEach(async () => {
+    jest.spyOn(SecurityDevicesService, 'limitRequestsRate').mockImplementation(() => Promise.resolve(true))
   })
 
   describe('Testing users CRUDS', () => {

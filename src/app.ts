@@ -22,6 +22,12 @@ export const SETTINGS = {
   CORP_PASS: process.env.CORP_PASS
 }
 
+export let SETTINGS_REWRITE= {
+  REQ_ATTEMPT: 5,
+  ACCESS_EXP_TOKEN_TIME:'10s',
+  REFRESH_EXP_TOKEN_TIME:'1d',
+}
+
 export const PATH = {
   BLOGS: '/blogs',
   POSTS: '/posts',

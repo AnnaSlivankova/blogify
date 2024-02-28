@@ -13,6 +13,7 @@ import {generateConfirmationEmail} from "./generate-confirmation-email";
 import {UserService} from "../user-service";
 import {DeviceAuthSessionsDb} from "../../models/device-auth-sessions-models/db/device-auth-sessions-db";
 import {SecurityDevicesRepository} from "../../repositories/security-devices-repository";
+import {SETTINGS_REWRITE} from "../../app";
 
 export class AuthService {
   static async login(loginOrEmail: string, password: string, ip: string, deviceName: string): Promise<null | LoginOutputModel & {
@@ -30,8 +31,8 @@ export class AuthService {
       userId: user._id.toString(),
     }
 
-    const accessToken = await JwtService.createJWT(user, '10s')
-    const refreshToken = await JwtService.createJWTRefreshToken(refreshTokenPayload, '20d')
+    const accessToken = await JwtService.createJWT(user, SETTINGS_REWRITE.ACCESS_EXP_TOKEN_TIME)
+    const refreshToken = await JwtService.createJWTRefreshToken(refreshTokenPayload, SETTINGS_REWRITE.REFRESH_EXP_TOKEN_TIME)
 
     const expDate = await JwtService.getExpirationDate(refreshToken)
     if (!expDate) return null
@@ -57,11 +58,11 @@ export class AuthService {
     const user = await UserService.getUserById(userId)
     if (!user) return null
 
-    const accessToken = await JwtService.createJWT(user, '10s')
+    const accessToken = await JwtService.createJWT(user, SETTINGS_REWRITE.ACCESS_EXP_TOKEN_TIME)
     const refreshToken = await JwtService.createJWTRefreshToken({
       deviceId,
       userId: user._id.toString(),
-    }, '20d')
+    }, SETTINGS_REWRITE.REFRESH_EXP_TOKEN_TIME)
 
     const expDate = await JwtService.getExpirationDate(refreshToken)
     if (!expDate) return null
