@@ -1,6 +1,7 @@
 import {SecurityDevicesRepository} from "../repositories/security-devices-repository";
 import {ApiRequestsHistoryDb} from "../models/device-auth-sessions-models/db/api-requests-history-db";
 import {add} from "date-fns";
+import {SETTINGS_REWRITE} from "../app";
 
 export class SecurityDevicesService {
   static async terminateRemoteSessions(deviceId: string, userId: string): Promise<boolean> {
@@ -34,13 +35,15 @@ export class SecurityDevicesService {
   static async limitRequestsRate(reqData: ApiRequestsHistoryDb) {
     const tenSecondsAgo = add(new Date(), {seconds: -10})
 
-    const [isSaved, count] = await Promise.all([
-      SecurityDevicesRepository.saveRequestHistory(reqData),
-      SecurityDevicesRepository.getCountRequestsHistory(reqData.ip, reqData.url, tenSecondsAgo)
-    ])
+    const isSaved = await SecurityDevicesRepository.saveRequestHistory(reqData)
+    const count = await SecurityDevicesRepository.getCountRequestsHistory(reqData.ip, reqData.url, tenSecondsAgo)
 
-    // if (count as number >= 5 || !isSaved) return null
-    if (count as number >= 5) return null
+    console.log('count', count)
+    console.log('isSaved', isSaved)
+
+    // if (count as number >= SETTINGS_REWRITE.REQ_ATTEMPT || !isSaved) return null
+    if (count as number >= SETTINGS_REWRITE.REQ_ATTEMPT) return null
+    // if (!isSaved) return null
 
     return true
   }

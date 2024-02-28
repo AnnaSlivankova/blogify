@@ -71,7 +71,7 @@ authRoute.get('/me', authJwtMiddleware, async (req: Request, res: Response<AuthM
 })
 
 authRoute.post('/registration', credsValidation(), customRateLimitMiddleware, async (req: RequestWithBody<RegistrationInputModel>, res: Response) => {
-  const user = AuthService.register(req.body)
+  const user = await AuthService.register(req.body)
 
   if (!user) {
     res.sendStatus(400)

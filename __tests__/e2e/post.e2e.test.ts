@@ -3,7 +3,7 @@ import {MongoClient} from "mongodb";
 import {commonHeaders, req} from "../tests-settings";
 import {MongoMemoryServer} from "mongodb-memory-server";
 import {paginatedEmptyResponse, testSeeder} from "../test.seeder";
-
+import {SecurityDevicesService} from "../../src/services/security-devices-service";
 
 describe('POSTS_E2E', () => {
   let client: MongoClient
@@ -17,6 +17,7 @@ describe('POSTS_E2E', () => {
 
   beforeEach(async () => {
     await req.delete(PATH.TESTING).expect(204)
+    jest.spyOn(SecurityDevicesService, 'limitRequestsRate').mockImplementation(() => Promise.resolve(true))
   })
 
   afterAll(async () => {

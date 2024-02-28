@@ -20,8 +20,8 @@ export const emailAdapter = {
 
     const info = await transporter.sendMail(mailOptions)
 
-    if (!info) return null
+    if (!info) return false
 
-    return info
+    return !!info
   }
 }

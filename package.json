@@ -7,7 +7,7 @@
     "watch": "tsc -w",
     "dev": "yarn nodemon --inspect dist/index.js",
     "jest": "jest -i --detectOpenHandles --forceExit",
-    "test:e2e": "jest --config jest-e2e.json -i --detectOpenHandles --forceExit",
+    "test:e2e": "jest --config jest-e2e.json -i --detectOpenHandles --forceExit --runInBand",
     "test:integration": "jest --config jest-integration.json -i --detectOpenHandles --forceExit",
     "build": "tsc",
     "start": "node dist/index.js"

@@ -17,7 +17,7 @@ export const customRateLimitMiddleware = async (req: Request, res: Response, nex
   //   date: {$gte: tenSecondsAgo}
   // })
   //
-  // if (count > 5) {
+  // if (count > SETTINGS_REWRITE.REQ_ATTEMPT) {
   //   res.sendStatus(429)
   //   return
   // }
