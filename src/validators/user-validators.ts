@@ -13,6 +13,13 @@ const passwordValidator = body('password').notEmpty().isString().trim().isLength
 
 const emailValidator = body('email').notEmpty().isString().trim().matches(/^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$/).withMessage('Invalid email value')
 
+const newPasswordValidator = body('newPassword').notEmpty().isString().trim().isLength({
+  min: 6,
+  max: 20
+}).withMessage('Invalid newPassword value')
+
 export const userValidation = () => [loginValidator, passwordValidator, emailValidator, inputValidationMiddleware]
 
 export const emailValidation = () => [emailValidator, inputValidationMiddleware]
+
+export const passwordValidation = () => [newPasswordValidator, inputValidationMiddleware]

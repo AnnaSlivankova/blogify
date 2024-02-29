@@ -318,4 +318,77 @@ describe('AUTH_E2E', () => {
       expect(res.body.errorsMessages[0].message).toBe('email is already confirmed')
     })
   })
+
+  describe('Testing /password-recovery', () => {
+    beforeEach(async () => {
+      await req.delete(PATH.TESTING).expect(204)
+    })
+
+    it('should send recoveryCode to registered email: STATUS 204', async () => {
+      const user = await testSeeder.registerUser()
+
+      await req
+        .post(PATH.AUTH + '/password-recovery')
+        .send({email: user!.email})
+        .expect(204)
+    })
+
+    it('should send recoveryCode to email even if current email is not registered: STATUS 204', async () => {
+      await req
+        .post(PATH.AUTH + '/password-recovery')
+        .send({email: 'unregisterEmail@gmail.com'})
+        .expect(204)
+    })
+
+    it('shouldn`t send recoveryCode when input data is incorrect: STATUS 400', async () => {
+      await testSeeder.registerUser()
+
+      const res = await req
+        .post(PATH.AUTH + '/password-recovery')
+        .send({email: 'invalidEmail$gmail.com'})
+        .expect(400)
+
+      expect(res.body.errorsMessages.length).toBe(1)
+      expect(res.body.errorsMessages[0].field).toBe('email')
+    })
+  })
+
+  describe('Testing /new-password', () => {
+    beforeEach(async () => {
+      await req.delete(PATH.TESTING).expect(204)
+    })
+
+    it('should change user password with correct newPassword and valid recoveryCode: STATUS 204', async () => {
+      const {userId, passwordRecoveryInfo} = await testSeeder.requestUserPasswordRecovery()
+
+      await req
+        .post(PATH.AUTH + '/new-password')
+        .send({newPassword: 'new_password', recoveryCode: userId + ' ' + passwordRecoveryInfo.recoveryCode })
+        .expect(204)
+    })
+
+    it('shouldn`t change user password with incorrect input data: STATUS 400', async () => {
+      const {userId, passwordRecoveryInfo} = await testSeeder.requestUserPasswordRecovery()
+
+    const res =   await req
+        .post(PATH.AUTH + '/new-password')
+        .send({newPassword: 'small', recoveryCode: userId + ' ' + passwordRecoveryInfo.recoveryCode })
+        .expect(400)
+
+      expect(res.body.errorsMessages.length).toBe(1)
+      expect(res.body.errorsMessages[0].field).toBe('newPassword')
+    })
+
+    it('shouldn`t change user password with valid recoveryCode: STATUS 400', async () => {
+      const {userId, passwordRecoveryInfo} = await testSeeder.requestUserPasswordRecovery()
+
+      const res =   await req
+        .post(PATH.AUTH + '/new-password')
+        .send({newPassword: 'new_password', recoveryCode: userId + ' ' + passwordRecoveryInfo.recoveryCode + 'i' })
+        .expect(400)
+
+      expect(res.body.errorsMessages.length).toBe(1)
+      expect(res.body.errorsMessages[0].field).toBe('recoveryCode')
+    })
+  })
 })

@@ -9,4 +9,10 @@ export type UserDb = {
     expirationDate?: Date
     isConfirmed?: boolean
   }
+
+  passwordRecovery?: {
+    recoveryCode?: string
+    expirationDate?: Date
+    updatedAt?: string
+  }
 }

@@ -10,6 +10,11 @@ export const UserSchema = new mongoose.Schema<UserDb>({
     confirmationCode: String,
     expirationDate: Date,
     isConfirmed: Boolean,
+  },
+  passwordRecovery: {
+    recoveryCode: String,
+    expirationDate: Date,
+    updatedAt: String,
   }
 })
 

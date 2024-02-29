@@ -63,4 +63,38 @@ export class AuthRepository {
       return false
     }
   }
+
+  static async updateRecoveryPassInfo(_id: ObjectId, recoveryCode: string, expirationDate: Date): Promise<boolean> {
+    try {
+      const user = await UserModel.findOne({_id})
+      if (!user) return false
+
+      user.passwordRecovery!.recoveryCode = recoveryCode
+      user.passwordRecovery!.expirationDate = expirationDate
+
+      await user.save()
+
+      return true
+    } catch (e) {
+      return false
+    }
+  }
+
+  static async updateUserHash(_id: ObjectId, newHash: string, updatedAt: string): Promise<boolean> {
+    try {
+      const user = await UserModel.findOne({_id})
+      if (!user) return false
+
+      user.hash = newHash
+      user.passwordRecovery!.updatedAt = updatedAt
+      user.passwordRecovery!.recoveryCode = undefined
+      user.passwordRecovery!.expirationDate = undefined
+
+      await user.save()
+
+      return true
+    } catch (e) {
+      return false
+    }
+  }
 }

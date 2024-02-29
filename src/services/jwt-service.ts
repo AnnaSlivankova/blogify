@@ -29,7 +29,7 @@ export class JwtService {
 
       return {deviceId, userId, iat, exp}
     } catch (e) {
-      console.log('validateToken', false)
+      // console.log('validateToken', false)
       return false
     }
   }

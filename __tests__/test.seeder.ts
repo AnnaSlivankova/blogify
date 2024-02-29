@@ -209,6 +209,14 @@ export const testSeeder = {
 
     return {refreshToken, accessToken}
   },
+  async requestUserPasswordRecovery() {
+    const newUser = await this.registerUser()
+    await this.passwordRecovery(newUser!.email)
+
+    const userInDb = await AuthRepository.getUserById(newUser!._id.toString())
+
+    return {userId: userInDb!._id.toString(), passwordRecoveryInfo: userInDb!.passwordRecovery!}
+  },
 
 
 //COMMENTS
@@ -285,7 +293,7 @@ export const testSeeder = {
     return await SecurityDevicesQueryRepository.getAllActiveSessions(userId)
   },
 
-  //rate limit
+  //RATE LIMIT
   async login(loginOrEmail: string, password: string, status: number = 200) {
     return await req.post('/auth/login').send({loginOrEmail, password}).expect(status)
   },
@@ -298,6 +306,13 @@ export const testSeeder = {
     return await req.post('/auth/registration-confirmation').send({code}).expect(status)
   },
 
+  async passwordRecovery(email: string, status: number = 204) {
+    return await req.post('/auth/password-recovery').send({email}).expect(status)
+  },
+
+  async setNewPassword(newPassword: string, recoveryCode: string, status: number = 204) {
+    return await req.post('/auth/new-password').send({newPassword, recoveryCode}).expect(status)
+  },
 }
 
 export const paginatedEmptyResponse = {
