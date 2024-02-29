@@ -8,11 +8,11 @@ import {UserViewModel} from "../src/models/user-models/output/user-view-model";
 import {BcryptService} from "../src/services/bcrypt-service";
 import {UserDb} from "../src/models/user-models/db/user-db";
 import {add} from "date-fns";
-import {AuthRepository} from "../src/repositories/auth-repository";
+import {AuthRepository} from "../src/repositories/auth/auth-repository";
 import {UserService} from "../src/services/user-service";
 import {ObjectId, WithId} from "mongodb";
 import {AuthService} from "../src/services/auth-service/auth-service";
-import {SecurityDevicesQueryRepository} from "../src/repositories/security-devices-query-repository";
+import {SecurityDevicesQueryRepository} from "../src/repositories/security-devices/security-devices-query-repository";
 import {JwtService} from "../src/services/jwt-service";
 
 export const testSeeder = {
@@ -133,7 +133,7 @@ export const testSeeder = {
       hash,
       emailConfirmation: {
         confirmationCode: '12345',
-        expirationDare: add(new Date(), {
+        expirationDate: add(new Date(), {
           hours: 1,
           minutes: 2
         }),
@@ -156,7 +156,7 @@ export const testSeeder = {
       hash,
       emailConfirmation: {
         confirmationCode: '12345',
-        expirationDare: add(new Date(), {
+        expirationDate: add(new Date(), {
           hours: 1,
           minutes: 2
         }),
@@ -181,7 +181,7 @@ export const testSeeder = {
         hash,
         emailConfirmation: {
           confirmationCode: '12345',
-          expirationDare: add(new Date(), {
+          expirationDate: add(new Date(), {
             hours: 1,
             minutes: 2
           }),

@@ -1,23 +1,20 @@
 import {MongoMemoryServer} from "mongodb-memory-server";
 import {PATH, SETTINGS} from "../../src/app";
-import {MongoClient} from "mongodb";
 import {commonHeaders, req} from "../tests-settings";
 import {testSeeder} from "../test.seeder";
 import {SecurityDevicesService} from "../../src/services/security-devices-service";
+import mongoose from "mongoose";
 
 describe('USERS_E2E', () => {
-  let client: MongoClient
-
   beforeAll(async () => {
     const mongoServer = await MongoMemoryServer.create()
     SETTINGS.MONGO_URL = mongoServer.getUri()
-    client = new MongoClient(SETTINGS.MONGO_URL)
-    await client.connect()
+    await mongoose.connect(SETTINGS.MONGO_URL)
   })
 
   afterAll(async () => {
     await req.delete(PATH.TESTING).expect(204)
-    await client.close()
+    await mongoose.connection.close()
   })
 
   beforeEach(async () => {

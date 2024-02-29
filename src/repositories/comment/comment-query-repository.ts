@@ -1,17 +1,14 @@
-import {CommentViewModel} from "../models/comment-models/output/CommentViewModel";
-import {commentsCollection} from "../db/db";
+import {CommentViewModel} from "../../models/comment-models/output/CommentViewModel";
 import {ObjectId, SortDirection} from "mongodb";
-import {commentMapper} from "../models/comment-models/mapper/comment-mapper";
-import {Pagination} from "../types";
+import {commentMapper} from "../../models/comment-models/mapper/comment-mapper";
+import {Pagination} from "../../types";
+import {CommentModel} from "./comment-schema";
 
 export class CommentQueryRepository {
   static async getCommentById(id: string): Promise<CommentViewModel | null> {
     try {
-      const comment = await commentsCollection.findOne({_id: new ObjectId(id)})
-
-      if (!comment) {
-        return null
-      }
+      const comment = await CommentModel.findOne({_id: new ObjectId(id)}).lean()
+      if (!comment) return null
 
       return commentMapper(comment)
     } catch (e) {
@@ -20,18 +17,17 @@ export class CommentQueryRepository {
   }
 
   static async getComments(postId: string, sortData: SortData): Promise<Pagination<CommentViewModel> | null> {
-    const {sortDirection, sortBy, pageSize, pageNumber} = sortData
-
     try {
-      const comments = await commentsCollection
+      const {sortDirection, sortBy, pageSize, pageNumber} = sortData
+
+      const comments = await CommentModel
         .find({postId: postId})
-        .sort(sortBy, sortDirection)
+        .sort({[sortBy]: sortDirection})
         .skip((pageNumber - 1) * pageSize)
         .limit(pageSize)
-        .toArray()
+        .lean()
 
-      const totalCount = await commentsCollection.countDocuments({postId: postId})
-
+      const totalCount = await CommentModel.countDocuments({postId: postId})
       const pagesCount = Math.ceil(totalCount / pageSize)
 
       return {
@@ -44,7 +40,6 @@ export class CommentQueryRepository {
     } catch (e) {
       return null
     }
-
   }
 }
 
@@ -52,5 +47,5 @@ type SortData = {
   pageNumber: number
   pageSize: number
   sortBy: string
-  sortDirection?: SortDirection
+  sortDirection: SortDirection
 }

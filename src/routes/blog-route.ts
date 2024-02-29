@@ -12,12 +12,12 @@ import {BlogViewModel} from "../models/blog-models/output/blog-view-model";
 import {CreateBlogModel} from "../models/blog-models/input/create-blog-model";
 import {UpdateBlogModel} from "../models/blog-models/input/update-blog-model";
 import {QueryBlogModel} from "../models/blog-models/input/query-blog-model";
-import {BlogQueryRepository} from "../repositories/blog-query-repository";
+import {BlogQueryRepository} from "../repositories/blog/blog-query-repository";
 import {createPostFromBlogValidation} from "../validators/post-validators";
 import {CreatePostFromBlogModel} from "../models/blog-models/input/create-post-from-blog-model";
 import {PostViewModel} from "../models/post-models/output/post-view-model";
 import {BlogService} from "../services/blog-service";
-import {PostQueryRepository} from "../repositories/post-query-repository";
+import {PostQueryRepository} from "../repositories/post/post-query-repository";
 import {QueryPostModel} from "../models/post-models/input/query-post-model";
 import {idValidationMiddleware} from "../middlewares/id-validation-middleware";
 

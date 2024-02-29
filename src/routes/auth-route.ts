@@ -9,7 +9,7 @@ import {ResendEmailInputModel} from "../models/auth-models/input/resend-email-in
 import {credsValidation} from "../validators/auth-validators";
 import {ConfirmEmailInputModel} from "../models/auth-models/input/confirmation-email-input-model";
 import {AuthMeOutputModel} from "../models/auth-models/output/auth-me-output-model";
-import {UserQueryRepository} from "../repositories/user-query-repository";
+import {UserQueryRepository} from "../repositories/user/user-query-repository";
 import {authRefreshJwtMiddleware} from "../middlewares/auth/auth-refresh-jwt-middleware";
 import {customRateLimitMiddleware} from "../middlewares/auth/custom-rate-limit-middleware";
 

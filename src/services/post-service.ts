@@ -1,10 +1,10 @@
-import {BlogQueryRepository} from "../repositories/blog-query-repository";
+import {BlogQueryRepository} from "../repositories/blog/blog-query-repository";
 import {PostDb} from "../models/post-models/db/post-db";
-import {PostRepository} from "../repositories/post-repository";
-import {PostQueryRepository} from "../repositories/post-query-repository";
+import {PostRepository} from "../repositories/post/post-repository";
+import {PostQueryRepository} from "../repositories/post/post-query-repository";
 import {PostViewModel} from "../models/post-models/output/post-view-model";
 import {CreatePostModel} from "../models/post-models/input/create-post-model";
-import {BlogRepository} from "../repositories/blog-repository";
+import {BlogRepository} from "../repositories/blog/blog-repository";
 import {UpdatePostModel} from "../models/post-models/input/update-post-model";
 
 export class PostService {

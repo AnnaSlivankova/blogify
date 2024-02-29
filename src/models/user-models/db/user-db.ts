@@ -6,7 +6,7 @@ export type UserDb = {
 
   emailConfirmation?: {
     confirmationCode?: string
-    expirationDare?: Date
+    expirationDate?: Date
     isConfirmed?: boolean
   }
 }

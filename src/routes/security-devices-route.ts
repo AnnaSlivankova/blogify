@@ -1,6 +1,6 @@
 import {Router, Request, Response} from "express";
 import {authRefreshJwtMiddleware} from "../middlewares/auth/auth-refresh-jwt-middleware";
-import {SecurityDevicesQueryRepository} from "../repositories/security-devices-query-repository";
+import {SecurityDevicesQueryRepository} from "../repositories/security-devices/security-devices-query-repository";
 import {SecurityDevicesService} from "../services/security-devices-service";
 
 export const securityDevicesRoute = Router()

@@ -1,10 +1,10 @@
 import {CreateCommentModel} from "../models/comment-models/input/create-comment-model";
-import {PostRepository} from "../repositories/post-repository";
+import {PostRepository} from "../repositories/post/post-repository";
 import {CommentDb} from "../models/comment-models/db/comment-db";
-import {CommentRepository} from "../repositories/comment-repository";
+import {CommentRepository} from "../repositories/comment/comment-repository";
 import {ObjectId} from "mongodb";
-import {UserRepository} from "../repositories/user-repository";
-import {CommentQueryRepository} from "../repositories/comment-query-repository";
+import {UserRepository} from "../repositories/user/user-repository";
+import {CommentQueryRepository} from "../repositories/comment/comment-query-repository";
 import {CommentViewModel} from "../models/comment-models/output/CommentViewModel";
 import {UpdateCommentModel} from "../models/comment-models/input/update-comment-model";
 
