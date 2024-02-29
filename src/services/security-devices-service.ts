@@ -12,10 +12,7 @@ export class SecurityDevicesService {
     const session = await SecurityDevicesRepository.getSessionByDeviceId(deviceId)
     if (!session) return false
 
-    const isDeleted = await SecurityDevicesRepository.deleteSessionByDeviceId(deviceId)
-    if (!isDeleted) return false
-
-    return true
+    return await SecurityDevicesRepository.deleteSessionByDeviceId(deviceId)
   }
 
   static async checkValidDeviceId(deviceId: string): Promise<boolean> {
