@@ -1,6 +1,6 @@
 import {body} from "express-validator";
 import {inputValidationMiddleware} from "../middlewares/input-validation/input-validation-middleware";
-import {BlogQueryRepository} from "../repositories/blog-query-repository";
+import {BlogQueryRepository} from "../repositories/blog/blog-query-repository";
 
 const titleValidator = body('title').notEmpty().isString().withMessage('Title must be a string').trim().isLength({
   min: 1,

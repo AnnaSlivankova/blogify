@@ -1,25 +1,22 @@
 import {MongoMemoryServer} from "mongodb-memory-server";
 import {PATH, SETTINGS, SETTINGS_REWRITE} from "../../src/app";
-import {MongoClient} from "mongodb";
 import {req} from "../tests-settings";
 import {testSeeder} from "../test.seeder";
 import {emailAdapter} from "../../src/adapters/email-adapter";
 import {delay} from "../utils/delay";
-import { SecurityDevicesService } from "../../src/services/security-devices-service";
+import {SecurityDevicesService} from "../../src/services/security-devices-service";
+import mongoose from 'mongoose'
 
 describe('AUTH_E2E', () => {
-  let client: MongoClient
-
   beforeAll(async () => {
     const mongoServer = await MongoMemoryServer.create()
     SETTINGS.MONGO_URL = mongoServer.getUri()
-    client = new MongoClient(SETTINGS.MONGO_URL)
-    await client.connect()
+    await mongoose.connect(SETTINGS.MONGO_URL)
   })
 
   afterAll(async () => {
     await req.delete(PATH.TESTING).expect(204)
-    await client.close()
+    await mongoose.connection.close()
   })
 
   beforeEach(async () => {
@@ -322,43 +319,76 @@ describe('AUTH_E2E', () => {
     })
   })
 
-  // describe('Testing rate limit: STATUS 429', () => {
-  //   beforeEach(async () => {
-  //     await req.delete(PATH.TESTING).expect(204)
-  //     jest.spyOn(emailAdapter, 'sendEmail').mockImplementation(() => Promise.resolve(true))
-  //   })
-  //
-  //   it('/login: STATUS 429', async () => {
-  //     const user = await testSeeder.registerConfirmedUser()
-  //
-  //     for (let i = 0; i < 5; i++) {
-  //       await testSeeder.login(user!.login, '1234567')
-  //     }
-  //
-  //     await testSeeder.login(user!.login, '1234567', 429)
-  //
-  //     const sessions = await testSeeder.getAllDeviceSessions(user!._id.toString())
-  //
-  //     expect(sessions!.length).toBe(5)
-  //   })
-  //
-  //   it('/registration: STATUS 429', async () => {
-  //     for (let i = 0; i < 5; i++) {
-  //       await testSeeder.registration('test' + i, i + 'test@gmail.com', '1234567')
-  //     }
-  //
-  //     await testSeeder.registration('login', 'email@gmail.com', '1234567', 429)
-  //   })
-  //
-  //   it('/registration-confirmation: STATUS 429', async () => {
-  //     const user = await testSeeder.registerUser()
-  //
-  //     for (let i = 0; i < 5; i++) {
-  //       const res = await testSeeder.registerUser()
-  //       await testSeeder.registrationConfirmation(`${res!._id.toString()} ${res!.emailConfirmation!.confirmationCode}`)
-  //     }
-  //
-  //     await testSeeder.registrationConfirmation(`${user!._id.toString()} ${user!.emailConfirmation!.confirmationCode}`, 429)
-  //   })
-  // })
+  describe('Testing /password-recovery', () => {
+    beforeEach(async () => {
+      await req.delete(PATH.TESTING).expect(204)
+    })
+
+    it('should send recoveryCode to registered email: STATUS 204', async () => {
+      const user = await testSeeder.registerUser()
+
+      await req
+        .post(PATH.AUTH + '/password-recovery')
+        .send({email: user!.email})
+        .expect(204)
+    })
+
+    it('should send recoveryCode to email even if current email is not registered: STATUS 204', async () => {
+      await req
+        .post(PATH.AUTH + '/password-recovery')
+        .send({email: 'unregisterEmail@gmail.com'})
+        .expect(204)
+    })
+
+    it('shouldn`t send recoveryCode when input data is incorrect: STATUS 400', async () => {
+      await testSeeder.registerUser()
+
+      const res = await req
+        .post(PATH.AUTH + '/password-recovery')
+        .send({email: 'invalidEmail$gmail.com'})
+        .expect(400)
+
+      expect(res.body.errorsMessages.length).toBe(1)
+      expect(res.body.errorsMessages[0].field).toBe('email')
+    })
+  })
+
+  describe('Testing /new-password', () => {
+    beforeEach(async () => {
+      await req.delete(PATH.TESTING).expect(204)
+    })
+
+    it('should change user password with correct newPassword and valid recoveryCode: STATUS 204', async () => {
+      const {userId, passwordRecoveryInfo} = await testSeeder.requestUserPasswordRecovery()
+
+      await req
+        .post(PATH.AUTH + '/new-password')
+        .send({newPassword: 'new_password', recoveryCode: userId + ' ' + passwordRecoveryInfo.recoveryCode })
+        .expect(204)
+    })
+
+    it('shouldn`t change user password with incorrect input data: STATUS 400', async () => {
+      const {userId, passwordRecoveryInfo} = await testSeeder.requestUserPasswordRecovery()
+
+    const res =   await req
+        .post(PATH.AUTH + '/new-password')
+        .send({newPassword: 'small', recoveryCode: userId + ' ' + passwordRecoveryInfo.recoveryCode })
+        .expect(400)
+
+      expect(res.body.errorsMessages.length).toBe(1)
+      expect(res.body.errorsMessages[0].field).toBe('newPassword')
+    })
+
+    it('shouldn`t change user password with valid recoveryCode: STATUS 400', async () => {
+      const {userId, passwordRecoveryInfo} = await testSeeder.requestUserPasswordRecovery()
+
+      const res =   await req
+        .post(PATH.AUTH + '/new-password')
+        .send({newPassword: 'new_password', recoveryCode: userId + ' ' + passwordRecoveryInfo.recoveryCode + 'i' })
+        .expect(400)
+
+      expect(res.body.errorsMessages.length).toBe(1)
+      expect(res.body.errorsMessages[0].field).toBe('recoveryCode')
+    })
+  })
 })

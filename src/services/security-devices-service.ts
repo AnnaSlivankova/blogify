@@ -1,4 +1,4 @@
-import {SecurityDevicesRepository} from "../repositories/security-devices-repository";
+import {SecurityDevicesRepository} from "../repositories/security-devices/security-devices-repository";
 import {ApiRequestsHistoryDb} from "../models/device-auth-sessions-models/db/api-requests-history-db";
 import {add} from "date-fns";
 import {SETTINGS_REWRITE} from "../app";
@@ -12,10 +12,7 @@ export class SecurityDevicesService {
     const session = await SecurityDevicesRepository.getSessionByDeviceId(deviceId)
     if (!session) return false
 
-    const isDeleted = await SecurityDevicesRepository.deleteSessionByDeviceId(deviceId)
-    if (!isDeleted) return false
-
-    return true
+    return await SecurityDevicesRepository.deleteSessionByDeviceId(deviceId)
   }
 
   static async checkValidDeviceId(deviceId: string): Promise<boolean> {
@@ -38,12 +35,7 @@ export class SecurityDevicesService {
     const isSaved = await SecurityDevicesRepository.saveRequestHistory(reqData)
     const count = await SecurityDevicesRepository.getCountRequestsHistory(reqData.ip, reqData.url, tenSecondsAgo)
 
-    console.log('count', count)
-    console.log('isSaved', isSaved)
-
-    // if (count as number >= SETTINGS_REWRITE.REQ_ATTEMPT || !isSaved) return null
-    if (count as number >= SETTINGS_REWRITE.REQ_ATTEMPT) return null
-    // if (!isSaved) return null
+    if (count as number > SETTINGS_REWRITE.REQ_ATTEMPT || !isSaved) return null
 
     return true
   }

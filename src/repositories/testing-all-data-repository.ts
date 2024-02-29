@@ -1,22 +1,20 @@
-import {
-  apiRequestsHistoryCollection,
-  blogsCollection,
-  commentsCollection,
-  deviceAuthSessionsCollection,
-  postsCollection,
-  usersCollection
-} from "../db/db";
+import {BlogModel} from "./blog/blog-schema";
+import {PostModel} from "./post/post-schema";
+import {UserModel} from "./user/user-schema";
+import {CommentModel} from "./comment/comment-schema";
+import {DeviceAuthSessionsModel} from "./security-devices/device-auth-sessions-schema";
+import {ApiRequestsHistoryModel} from "./security-devices/api-requests-history-schema";
 
 export class TestingAllDataRepository {
   static async deleteAllData() {
     try {
       await Promise.all([
-        blogsCollection.deleteMany({}),
-        postsCollection.deleteMany({}),
-        usersCollection.deleteMany({}),
-        commentsCollection.deleteMany({}),
-        deviceAuthSessionsCollection.deleteMany({}),
-        apiRequestsHistoryCollection.deleteMany({}),
+        BlogModel.deleteMany({}),
+        PostModel.deleteMany({}),
+        UserModel.deleteMany({}),
+        CommentModel.deleteMany({}),
+        DeviceAuthSessionsModel.deleteMany({}),
+        ApiRequestsHistoryModel.deleteMany({}),
       ])
 
       return
@@ -24,14 +22,5 @@ export class TestingAllDataRepository {
       console.log('e', e)
       return
     }
-
-    // await blogsCollection.deleteMany({})
-    // await postsCollection.deleteMany({})
-    // await usersCollection.deleteMany({})
-    // await commentsCollection.deleteMany({})
-    // await deviceAuthSessionsCollection.deleteMany({})
-
-    // await db.dropDatabase() //но нужны админские права для дропа всей БД
   }
-
 }

@@ -4,8 +4,8 @@ import {commentValidation} from "../validators/comment-validators";
 import {RequestWithParamsAndBody} from "../types";
 import {UpdateCommentModel} from "../models/comment-models/input/update-comment-model";
 import {CommentService} from "../services/comment-service";
-import {CommentQueryRepository} from "../repositories/comment-query-repository";
-import {CommentRepository} from "../repositories/comment-repository";
+import {CommentQueryRepository} from "../repositories/comment/comment-query-repository";
+import {CommentRepository} from "../repositories/comment/comment-repository";
 import {idValidationMiddleware} from "../middlewares/id-validation-middleware";
 
 export const commentRoute = Router({})

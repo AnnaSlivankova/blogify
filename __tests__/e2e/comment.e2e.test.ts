@@ -1,24 +1,21 @@
 import {MongoMemoryServer} from "mongodb-memory-server";
 import {PATH, SETTINGS} from "../../src/app";
-import {MongoClient} from "mongodb";
 import {req} from "../tests-settings";
 import {testSeeder} from "../test.seeder";
 import {delay} from "../utils/delay";
 import {SecurityDevicesService} from "../../src/services/security-devices-service";
+import mongoose from "mongoose";
 
 describe('COMMENTS_E2E', () => {
-  let client: MongoClient
-
   beforeAll(async () => {
     const mongoServer = await MongoMemoryServer.create()
     SETTINGS.MONGO_URL = mongoServer.getUri()
-    client = new MongoClient(SETTINGS.MONGO_URL)
-    await client.connect()
+    await mongoose.connect(SETTINGS.MONGO_URL)
   })
 
   afterAll(async () => {
     await req.delete(PATH.TESTING).expect(204)
-    await client.close()
+    await mongoose.connection.close()
   })
 
   beforeEach(async () => {
@@ -31,10 +28,8 @@ describe('COMMENTS_E2E', () => {
     })
 
     it('should create comment to a post: STATUS 201', async () => {
-      const [{accessToken}, postId] = await Promise.all([
-        testSeeder.loginUser(),
-        testSeeder.createBlogWithPostInDb()
-      ])
+      const {accessToken} = await testSeeder.loginUser()
+      const postId = await testSeeder.createBlogWithPostInDb()
 
       const res = await req
         .post(`${PATH.POSTS}/${postId}/comments`)

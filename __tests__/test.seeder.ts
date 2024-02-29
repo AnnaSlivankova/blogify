@@ -8,11 +8,11 @@ import {UserViewModel} from "../src/models/user-models/output/user-view-model";
 import {BcryptService} from "../src/services/bcrypt-service";
 import {UserDb} from "../src/models/user-models/db/user-db";
 import {add} from "date-fns";
-import {AuthRepository} from "../src/repositories/auth-repository";
+import {AuthRepository} from "../src/repositories/auth/auth-repository";
 import {UserService} from "../src/services/user-service";
 import {ObjectId, WithId} from "mongodb";
 import {AuthService} from "../src/services/auth-service/auth-service";
-import {SecurityDevicesQueryRepository} from "../src/repositories/security-devices-query-repository";
+import {SecurityDevicesQueryRepository} from "../src/repositories/security-devices/security-devices-query-repository";
 import {JwtService} from "../src/services/jwt-service";
 
 export const testSeeder = {
@@ -133,7 +133,7 @@ export const testSeeder = {
       hash,
       emailConfirmation: {
         confirmationCode: '12345',
-        expirationDare: add(new Date(), {
+        expirationDate: add(new Date(), {
           hours: 1,
           minutes: 2
         }),
@@ -156,7 +156,7 @@ export const testSeeder = {
       hash,
       emailConfirmation: {
         confirmationCode: '12345',
-        expirationDare: add(new Date(), {
+        expirationDate: add(new Date(), {
           hours: 1,
           minutes: 2
         }),
@@ -181,7 +181,7 @@ export const testSeeder = {
         hash,
         emailConfirmation: {
           confirmationCode: '12345',
-          expirationDare: add(new Date(), {
+          expirationDate: add(new Date(), {
             hours: 1,
             minutes: 2
           }),
@@ -208,6 +208,14 @@ export const testSeeder = {
     const accessToken = res.body.accessToken
 
     return {refreshToken, accessToken}
+  },
+  async requestUserPasswordRecovery() {
+    const newUser = await this.registerUser()
+    await this.passwordRecovery(newUser!.email)
+
+    const userInDb = await AuthRepository.getUserById(newUser!._id.toString())
+
+    return {userId: userInDb!._id.toString(), passwordRecoveryInfo: userInDb!.passwordRecovery!}
   },
 
 
@@ -285,7 +293,7 @@ export const testSeeder = {
     return await SecurityDevicesQueryRepository.getAllActiveSessions(userId)
   },
 
-  //rate limit
+  //RATE LIMIT
   async login(loginOrEmail: string, password: string, status: number = 200) {
     return await req.post('/auth/login').send({loginOrEmail, password}).expect(status)
   },
@@ -298,6 +306,13 @@ export const testSeeder = {
     return await req.post('/auth/registration-confirmation').send({code}).expect(status)
   },
 
+  async passwordRecovery(email: string, status: number = 204) {
+    return await req.post('/auth/password-recovery').send({email}).expect(status)
+  },
+
+  async setNewPassword(newPassword: string, recoveryCode: string, status: number = 204) {
+    return await req.post('/auth/new-password').send({newPassword, recoveryCode}).expect(status)
+  },
 }
 
 export const paginatedEmptyResponse = {

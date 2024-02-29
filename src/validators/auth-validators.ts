@@ -1,5 +1,5 @@
 import {body} from "express-validator";
-import {AuthRepository} from "../repositories/auth-repository";
+import {AuthRepository} from "../repositories/auth/auth-repository";
 import {inputValidationMiddleware} from "../middlewares/input-validation/input-validation-middleware";
 
 const emailValidator = body('email').notEmpty().isString().trim().matches(/^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$/).withMessage('Invalid email value').custom(async (value) => {

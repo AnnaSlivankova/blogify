@@ -1,7 +1,7 @@
 import {CreateUserModel} from "../models/user-models/input/create-user-model";
 import {UserViewModel} from "../models/user-models/output/user-view-model";
 import {UserDb} from "../models/user-models/db/user-db";
-import {UserRepository} from "../repositories/user-repository";
+import {UserRepository} from "../repositories/user/user-repository";
 import {BcryptService} from "./bcrypt-service";
 import {ObjectId, WithId} from "mongodb";
 

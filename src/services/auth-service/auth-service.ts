@@ -1,18 +1,18 @@
-import {AuthRepository} from "../../repositories/auth-repository";
+import {AuthRepository} from "../../repositories/auth/auth-repository";
 import {BcryptService} from "../bcrypt-service";
 import {JwtService} from "../jwt-service";
 import {LoginOutputModel} from "../../models/auth-models/output/login-output-model";
 import {RegistrationInputModel} from "../../models/auth-models/input/registration-input-model";
 import {UserDb} from "../../models/user-models/db/user-db";
-import {UserRepository} from "../../repositories/user-repository";
+import {UserRepository} from "../../repositories/user/user-repository";
 import {emailAdapter} from "../../adapters/email-adapter";
 import {v4 as uuidv4} from 'uuid';
 import {add, isBefore} from "date-fns";
 import {ObjectId, WithId} from "mongodb";
-import {generateConfirmationEmail} from "./generate-confirmation-email";
+import {generateConfirmationEmailMessage} from "./generate-confirmation-email-message";
 import {UserService} from "../user-service";
 import {DeviceAuthSessionsDb} from "../../models/device-auth-sessions-models/db/device-auth-sessions-db";
-import {SecurityDevicesRepository} from "../../repositories/security-devices-repository";
+import {SecurityDevicesRepository} from "../../repositories/security-devices/security-devices-repository";
 import {SETTINGS_REWRITE} from "../../app";
 
 export class AuthService {
@@ -91,7 +91,7 @@ export class AuthService {
       hash,
       emailConfirmation: {
         confirmationCode: uuidv4(),
-        expirationDare: add(new Date(), {
+        expirationDate: add(new Date(), {
           hours: 1,
           minutes: 2
         }),
@@ -104,7 +104,7 @@ export class AuthService {
     if (!createdUser) return null
 
     try {
-      await emailAdapter.sendEmail(email, 'Confirm registration', generateConfirmationEmail(createdUser!._id.toString(), createdUser.emailConfirmation!.confirmationCode!))
+      await emailAdapter.sendEmail(email, 'Confirm registration', generateConfirmationEmailMessage(createdUser!._id.toString(), createdUser.emailConfirmation!.confirmationCode!, 'code'))
     } catch (e) {
       console.log('AuthService/register', e)
       await UserRepository.deleteUser(createdUser!._id.toString())
@@ -119,10 +119,9 @@ export class AuthService {
     const [userId, token] = code.split(' ')
 
     const user = await AuthRepository.getUserById(userId)
-
     if (!user) return null
 
-    const dateUser = user.emailConfirmation!.expirationDare as Date
+    const dateUser = user.emailConfirmation!.expirationDate as Date
 
     const isExpire = isBefore(dateUser, new Date())
 
@@ -138,7 +137,6 @@ export class AuthService {
 
   static async resendEmail(email: string): Promise<null | boolean> {
     const user = await AuthRepository.getSearchedUser(email)
-
     if (!user) return null
 
     if (user.emailConfirmation!.isConfirmed) return null
@@ -149,14 +147,64 @@ export class AuthService {
 
     if (!isConfCodeUpdated) return false
 
-
     try {
-      await emailAdapter.sendEmail(email, 'Confirm registration', generateConfirmationEmail(user._id.toString(), newCode))
+      await emailAdapter.sendEmail(email, 'Confirm registration', generateConfirmationEmailMessage(user._id.toString(), newCode, 'code'))
     } catch (e) {
-      console.log('AuthService/register', e)
+      console.log('AuthService/resendEmail', e)
       return false
     }
 
     return true
+  }
+
+  static async sendPassRecoverInstructions(email: string): Promise<boolean> {
+    try {
+      const user = await AuthRepository.getSearchedUser(email)
+      if (!user) return !!'user is not found'
+
+      const confirmationCode = uuidv4()
+      const expirationDate = add(new Date(), {
+        hours: 1,
+        minutes: 2
+      })
+
+      const idUserUpdated = await AuthRepository.updateRecoveryPassInfo(user._id, confirmationCode, expirationDate)
+      if (!idUserUpdated) return false
+
+      try {
+        await emailAdapter.sendEmail(email, 'Confirm password recovery', generateConfirmationEmailMessage(user._id.toString(), confirmationCode, 'recoveryCode'))
+      } catch (e) {
+        console.log('AuthService/sendPassRecoverInstructions', e)
+        return false
+      }
+
+      return true
+    } catch (e) {
+      console.log('sendPassRecoverInstructions failed')
+      return false
+    }
+  }
+
+  static async changePassword(newPassword: string, recoveryCode: string): Promise<boolean> {
+    try {
+      const [userId, code] = recoveryCode.split(' ')
+      const user = await AuthRepository.getUserById(userId)
+      if (!user) return false
+
+      const dateUser = user.passwordRecovery!.expirationDate as Date
+      const isExpire = isBefore(dateUser, new Date())
+
+      if (code !== user.passwordRecovery!.recoveryCode || isExpire) {
+        return false
+      }
+
+      const newHash = await BcryptService.generateHash(newPassword)
+      const updatedAt = new Date().toISOString()
+
+      return AuthRepository.updateUserHash(user._id, newHash, updatedAt)
+    } catch (e) {
+      console.log('changePassword failed')
+      return false
+    }
   }
 }

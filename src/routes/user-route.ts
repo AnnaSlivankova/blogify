@@ -1,7 +1,7 @@
 import {Request, Response, Router} from "express";
 import {Pagination, RequestWithBody, RequestWithQuery} from "../types";
 import {QueryUserModel} from "../models/user-models/input/query-user-model";
-import {UserQueryRepository} from "../repositories/user-query-repository";
+import {UserQueryRepository} from "../repositories/user/user-query-repository";
 import {UserViewModel} from "../models/user-models/output/user-view-model";
 import {authMiddleware} from "../middlewares/auth/auth-middleware";
 import {userValidation} from "../validators/user-validators";

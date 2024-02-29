@@ -3,15 +3,17 @@ import {RequestWithBody} from "../types";
 import {LoginInputModel} from "../models/auth-models/input/login-input-model";
 import {AuthService} from "../services/auth-service/auth-service";
 import {authJwtMiddleware} from "../middlewares/auth/auth-jwt-middleware";
-import {emailValidation} from "../validators/user-validators";
+import {emailValidation, passwordValidation} from "../validators/user-validators";
 import {RegistrationInputModel} from "../models/auth-models/input/registration-input-model";
 import {ResendEmailInputModel} from "../models/auth-models/input/resend-email-input-model";
 import {credsValidation} from "../validators/auth-validators";
 import {ConfirmEmailInputModel} from "../models/auth-models/input/confirmation-email-input-model";
 import {AuthMeOutputModel} from "../models/auth-models/output/auth-me-output-model";
-import {UserQueryRepository} from "../repositories/user-query-repository";
+import {UserQueryRepository} from "../repositories/user/user-query-repository";
 import {authRefreshJwtMiddleware} from "../middlewares/auth/auth-refresh-jwt-middleware";
 import {customRateLimitMiddleware} from "../middlewares/auth/custom-rate-limit-middleware";
+import {PasswordRecoveryInputModel} from "../models/auth-models/input/password-recovery-input-model";
+import {ConfirmationRecoveryPassInputModel} from "../models/auth-models/input/confirmation-recovery-pass-input-model";
 
 export const authRoute = Router({})
 
@@ -103,16 +105,28 @@ authRoute.post('/registration-email-resending', emailValidation(), customRateLim
   res.sendStatus(204)
 })
 
+authRoute.post('/password-recovery', emailValidation(), customRateLimitMiddleware, async (req: RequestWithBody<PasswordRecoveryInputModel>, res: Response) => {
+  const isInstructionsSent = await AuthService.sendPassRecoverInstructions(req.body.email)
 
-/**
- * Generates an object with an error message for a specific field.
- * @param {string} message - The error message.
- * @param {string} field - The name of the field for which the error message is generated.
- * @returns {Object} - An object with an error message for a specific field.
- * @property {Array<Object>} errorsMessages - An array of objects containing error messages.
- * @property {string} errorsMessages[].message - The error message.
- * @property {string} errorsMessages[].field - The name of the field for which the error message is generated.
- */
+  if (!isInstructionsSent) {
+    res.sendStatus(500)
+    return
+  }
+
+  res.sendStatus(204)
+})
+
+authRoute.post('/new-password', passwordValidation(), customRateLimitMiddleware, async (req: RequestWithBody<ConfirmationRecoveryPassInputModel>, res: Response) => {
+  const isPassChanged = await AuthService.changePassword(req.body.newPassword, req.body.recoveryCode)
+
+  if (!isPassChanged) {
+    res.status(400).send(generateErrorMessageResponse("the confirmation code is incorrect, expired or already been applied", "recoveryCode"))
+    return
+  }
+
+  res.sendStatus(204)
+})
+
 const generateErrorMessageResponse = (message: string, field: string): object => {
   return {
     errorsMessages: [

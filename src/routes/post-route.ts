@@ -12,7 +12,7 @@ import {
 import {CreatePostModel} from "../models/post-models/input/create-post-model";
 import {ObjectId} from "mongodb";
 import {UpdatePostModel} from "../models/post-models/input/update-post-model";
-import {PostQueryRepository} from "../repositories/post-query-repository";
+import {PostQueryRepository} from "../repositories/post/post-query-repository";
 import {QueryPostModel} from "../models/post-models/input/query-post-model";
 import {PostService} from "../services/post-service";
 import {CreateCommentModel} from "../models/comment-models/input/create-comment-model";
@@ -20,9 +20,9 @@ import {commentValidation} from "../validators/comment-validators";
 import {authJwtMiddleware} from "../middlewares/auth/auth-jwt-middleware";
 import {CommentService} from "../services/comment-service";
 import {QueryCommentModal} from "../models/comment-models/input/query-comment-modal";
-import {CommentQueryRepository} from "../repositories/comment-query-repository";
+import {CommentQueryRepository} from "../repositories/comment/comment-query-repository";
 import {CommentViewModel} from "../models/comment-models/output/CommentViewModel";
-import {PostRepository} from "../repositories/post-repository";
+import {PostRepository} from "../repositories/post/post-repository";
 import {idValidationMiddleware} from "../middlewares/id-validation-middleware";
 
 export const postRoute = Router({})

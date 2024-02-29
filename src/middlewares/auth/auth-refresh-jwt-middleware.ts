@@ -2,7 +2,7 @@ import {NextFunction, Request, Response} from "express";
 import {JwtService, PayloadWithConvertedDates} from "../../services/jwt-service";
 import {ObjectId} from "mongodb";
 import {UserService} from "../../services/user-service";
-import {SecurityDevicesRepository} from "../../repositories/security-devices-repository";
+import {SecurityDevicesRepository} from "../../repositories/security-devices/security-devices-repository";
 
 export const authRefreshJwtMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   const refreshToken = req.cookies['refreshToken'];
