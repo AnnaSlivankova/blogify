@@ -3,21 +3,32 @@ import {ObjectId, SortDirection} from "mongodb";
 import {commentMapper} from "../../models/comment-models/mapper/comment-mapper";
 import {Pagination} from "../../types";
 import {CommentModel} from "./comment-schema";
+import {LikesStatuses} from "../../models/comment-models/db/comment-db";
+import {LikeCommentStatusesDb} from "../../models/likes-models/db/like-comment-statuses-db";
 
 export class CommentQueryRepository {
-  static async getCommentById(id: string): Promise<CommentViewModel | null> {
+  static async getCommentById(id: string, userLikeStatus: LikesStatuses): Promise<CommentViewModel | null> {
     try {
       const comment = await CommentModel.findOne({_id: new ObjectId(id)}).lean()
       if (!comment) return null
 
-      return commentMapper(comment)
+      return commentMapper(comment, userLikeStatus??LikesStatuses.NONE)
     } catch (e) {
+      console.log('getCommentById qr error')
       return null
     }
   }
 
-  static async getComments(postId: string, sortData: SortData): Promise<Pagination<CommentViewModel> | null> {
+  static async getComments(postId: string, sortData: SortData, userLikeStatuses: LikeCommentStatusesDb[] | null): Promise<Pagination<CommentViewModel> | null> {
+    let ls: LikeCommentStatusesDb[]  = []
+
+    if(userLikeStatuses) {
+      ls = userLikeStatuses
+    }
+
     try {
+      console.log('userLikeStatuses', userLikeStatuses)
+
       const {sortDirection, sortBy, pageSize, pageNumber} = sortData
 
       const comments = await CommentModel
@@ -35,9 +46,15 @@ export class CommentQueryRepository {
         pageSize,
         pagesCount,
         page: pageNumber,
-        items: comments.map(commentMapper)
+        items: comments.map(comment => {
+          const userLikeStatus = ls
+            .find(el => el.commentId === comment._id.toString())
+
+          return commentMapper(comment, userLikeStatus?.likeStatus ?? LikesStatuses.NONE)
+        })
       }
     } catch (e) {
+      console.log('getComments qr error', e)
       return null
     }
   }

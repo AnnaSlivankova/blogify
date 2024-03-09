@@ -100,7 +100,6 @@ export class AuthService {
     }
 
     const createdUser = await AuthRepository.createUser(newUser)
-
     if (!createdUser) return null
 
     try {

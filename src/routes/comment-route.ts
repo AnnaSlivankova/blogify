@@ -1,12 +1,16 @@
 import {Request, Response, Router} from "express";
 import {authJwtMiddleware} from "../middlewares/auth/auth-jwt-middleware";
-import {commentValidation} from "../validators/comment-validators";
+import {commentValidation, likeStatusValidation} from "../validators/comment-validators";
 import {RequestWithParamsAndBody} from "../types";
 import {UpdateCommentModel} from "../models/comment-models/input/update-comment-model";
 import {CommentService} from "../services/comment-service";
 import {CommentQueryRepository} from "../repositories/comment/comment-query-repository";
 import {CommentRepository} from "../repositories/comment/comment-repository";
 import {idValidationMiddleware} from "../middlewares/id-validation-middleware";
+import {UpdateLikeStatusInputModel} from "../models/comment-models/input/update-like-status-input-model";
+import {LikesStatuses} from "../models/comment-models/db/comment-db";
+import {JwtService} from "../services/jwt-service";
+import {ObjectId} from "mongodb";
 
 export const commentRoute = Router({})
 
@@ -69,9 +73,24 @@ commentRoute.delete('/:id', authJwtMiddleware, idValidationMiddleware, async (re
 })
 
 commentRoute.get('/:id', idValidationMiddleware, async (req: Request<{ id: string }>, res: Response) => {
-  const id = req.params.id
+  const id = req.params.id //commentId
+  const rt = req.cookies['refreshToken']
 
-  const comment = await CommentQueryRepository.getCommentById(id)
+
+  const at = req.headers.authorization?.split(' ')[1]
+
+  console.log('refreshToken from comment route', rt)
+  // console.log('accessToken from comment route', at)
+  console.log('headers from comment route', req.headers.authorization)
+
+  // const userLikeStatus = await CommentService.getCurrentUserLikeCommentStatusRT(id, rt)
+  const userLikeStatus = await CommentService.getCurrentUserLikeCommentStatusRT(id, at??"rt")
+  // if(!userLikeStatus) {
+  //   res.sendStatus(508)
+  //   return
+  // }
+
+  const comment = await CommentQueryRepository.getCommentById(id, userLikeStatus!)
 
   if (!comment) {
     res.sendStatus(404)
@@ -79,4 +98,22 @@ commentRoute.get('/:id', idValidationMiddleware, async (req: Request<{ id: strin
   }
 
   res.status(200).send(comment)
+})
+
+commentRoute.put('/:id/like-status', authJwtMiddleware, idValidationMiddleware, likeStatusValidation(), async (req: RequestWithParamsAndBody<{
+  id: string
+}, UpdateLikeStatusInputModel>, res: Response<void>) => {
+
+  const commentId = req.params.id
+  const userId = req.user!._id
+
+  console.log('userId', req.user)
+  console.log('userId', userId)
+
+
+  const likeStatus = req.body.likeStatus
+
+  const updateLikeStatusResult = await CommentService.updateLikeStatus(commentId, userId, likeStatus)
+
+  res.sendStatus(updateLikeStatusResult.status)
 })

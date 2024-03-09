@@ -147,6 +147,7 @@ postRoute.post('/:id/comments', authJwtMiddleware, idValidationMiddleware, comme
   return res.status(201).send(createdComment)
 })
 
+
 postRoute.get('/:id/comments', idValidationMiddleware, async (req: RequestWithParamsAndQuery<{
   id: string
 }, QueryCommentModal>, res: Response<Pagination<CommentViewModel>>) => {
@@ -157,7 +158,20 @@ postRoute.get('/:id/comments', idValidationMiddleware, async (req: RequestWithPa
     sortDirection: req.query.sortDirection ?? 'desc'
   }
 
-  const id = req.params.id
+  const id = req.params.id //postId
+
+  const rt = req.cookies['refreshToken']
+  const at = req.headers.authorization!.split(' ')[1]
+
+  // const userLikeStatuses = await CommentService.getCurrentUserLikeCommentsStatusesRT(id, rt)
+  const userLikeStatuses = await CommentService.getCurrentUserLikeCommentsStatusesRT(id, at ?? "rt")
+
+  // if(!userLikeStatuses) {
+  //   res.sendStatus(508)
+  //   return
+  // }
+
+  console.log('userLikeStatuses from route', userLikeStatuses)
 
   const post = await PostRepository.getPostById(id)
   if (!post) {
@@ -165,8 +179,7 @@ postRoute.get('/:id/comments', idValidationMiddleware, async (req: RequestWithPa
     return
   }
 
-  const comments = await CommentQueryRepository.getComments(id, sortData)
-
+  const comments = await CommentQueryRepository.getComments(id, sortData, userLikeStatuses!)
   if (!comments) {
     res.sendStatus(404)
     return
