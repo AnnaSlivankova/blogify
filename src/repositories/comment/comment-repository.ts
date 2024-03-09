@@ -3,7 +3,6 @@ import {ObjectId, WithId} from "mongodb";
 import {UpdateCommentModel} from "../../models/comment-models/input/update-comment-model";
 import {CommentModel} from "./comment-schema";
 import {LikeCommentStatusesModel} from "./like-comment-statuses-schema";
-import {commentMapper} from "../../models/comment-models/mapper/comment-mapper";
 
 export class CommentRepository {
   static async createComment(createdData: CommentDb): Promise<string | null> {

@@ -2,7 +2,7 @@ import {CreateCommentModel} from "../models/comment-models/input/create-comment-
 import {PostRepository} from "../repositories/post/post-repository";
 import {CommentDb, LikesStatuses} from "../models/comment-models/db/comment-db";
 import {CommentRepository} from "../repositories/comment/comment-repository";
-import {ObjectId, WithId} from "mongodb";
+import {ObjectId} from "mongodb";
 import {UserRepository} from "../repositories/user/user-repository";
 import {CommentQueryRepository} from "../repositories/comment/comment-query-repository";
 import {CommentViewModel} from "../models/comment-models/output/CommentViewModel";

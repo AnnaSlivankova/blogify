@@ -8,9 +8,6 @@ import {CommentQueryRepository} from "../repositories/comment/comment-query-repo
 import {CommentRepository} from "../repositories/comment/comment-repository";
 import {idValidationMiddleware} from "../middlewares/id-validation-middleware";
 import {UpdateLikeStatusInputModel} from "../models/comment-models/input/update-like-status-input-model";
-import {LikesStatuses} from "../models/comment-models/db/comment-db";
-import {JwtService} from "../services/jwt-service";
-import {ObjectId} from "mongodb";
 
 export const commentRoute = Router({})
 

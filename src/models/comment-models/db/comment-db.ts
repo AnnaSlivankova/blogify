@@ -1,8 +1,4 @@
-import {ObjectId} from "mongodb";
-
 export type CommentDb = {
-  //id
-  // _id?:ObjectId,
   postId: string
   content: string
   createdAt: string

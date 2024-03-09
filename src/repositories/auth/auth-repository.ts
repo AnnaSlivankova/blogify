@@ -1,7 +1,6 @@
 import {UserDb} from "../../models/user-models/db/user-db";
 import {ObjectId, WithId} from "mongodb";
 import {UserModel} from "../user/user-schema";
-import {LikesStatuses} from "../../models/comment-models/db/comment-db";
 
 export class AuthRepository {
   static async getSearchedUser(loginOrEmail: string) {
