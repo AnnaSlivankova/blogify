@@ -1,9 +1,8 @@
 import {CommentDb, LikesStatuses} from "../../models/comment-models/db/comment-db";
-import {ObjectId, WithId} from "mongodb";
+import {ObjectId} from "mongodb";
 import {UpdateCommentModel} from "../../models/comment-models/input/update-comment-model";
 import {CommentModel} from "./comment-schema";
 import {LikeCommentStatusesModel} from "./like-comment-statuses-schema";
-import {LikeCommentStatusesDb} from "../../models/likes-models/db/like-comment-statuses-db";
 
 export class CommentRepository {
   static async createComment(createdData: CommentDb): Promise<string | null> {
@@ -53,20 +52,6 @@ export class CommentRepository {
     }
   }
 
-  static async getAllPostComments(postId: string): Promise<null | WithId<CommentDb>[]> {
-    try {
-      const comments = await CommentModel.find({postId: postId}).lean()
-      if (!comments) return null
-
-      // comments[0]._id
-
-      return comments
-    } catch (e) {
-      console.log('getAllPostComments repo error')
-      return null
-    }
-  }
-
   static async putUserCommentLikeStatusInDB(userId: string, commentId: string, likeStatus: LikesStatuses): Promise<LikesStatuses | null> {
     try {
       const res = new LikeCommentStatusesModel({userId, commentId, likeStatus})
@@ -107,18 +92,6 @@ export class CommentRepository {
     }
   }
 
-  static async getUserLikeCommentsStatuses(userId: string):Promise<null| WithId<LikeCommentStatusesDb>[]> {
-    try {
-      const currentLikeStatuses = await LikeCommentStatusesModel.find({userId}).lean()
-      if (!currentLikeStatuses.length) return null
-
-      return currentLikeStatuses
-    } catch (e) {
-      console.log('getUserLikeCommentsStatuses repo error')
-      return null
-    }
-  }
-
   static async updateCommentLikeStatuses(id: string, likeStatus: LikesStatuses, prevLikeStatus: string): Promise<boolean> {
     try {
       const comment = await CommentModel.findOne({_id: id})
@@ -144,14 +117,13 @@ export class CommentRepository {
           break;
 
         case LikesStatuses.NONE:
-            // if (prevLikeStatus !== LikesStatuses.NONE && [LikesStatuses.LIKE, LikesStatuses.DISLIKE].includes(prevLikeStatus as LikesStatuses)) {
-            if (prevLikeStatus !== LikesStatuses.NONE) {
-              if (prevLikeStatus === LikesStatuses.LIKE) {
-                comment.likesInfo.likesCount--
-              }
-              if (prevLikeStatus === LikesStatuses.DISLIKE) {
-                comment.likesInfo.dislikesCount--
-              }
+          if (prevLikeStatus !== LikesStatuses.NONE) {
+            if (prevLikeStatus === LikesStatuses.LIKE) {
+              comment.likesInfo.likesCount--
+            }
+            if (prevLikeStatus === LikesStatuses.DISLIKE) {
+              comment.likesInfo.dislikesCount--
+            }
           }
           break;
 

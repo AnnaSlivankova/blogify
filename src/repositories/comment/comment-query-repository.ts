@@ -70,8 +70,6 @@ export class CommentQueryRepository {
   }
 
   static async getComments(postId: string, sortData: SortData, accessToken: string | undefined): Promise<Pagination<CommentViewModel> | null> {
-    // const userId = await JwtService.getUserIdByToken(accessToken)
-    // let userLikeStatus: LikeCommentStatusesDb[] = []
     try {
       const {sortDirection, sortBy, pageSize, pageNumber} = sortData
 
@@ -86,21 +84,9 @@ export class CommentQueryRepository {
       const pagesCount = Math.ceil(totalCount / pageSize)
 
       const commentsIds = comments.map(comment => comment._id.toString())
+
       const userLikeStatus = await this.getCurrentLikesStatuses(accessToken, commentsIds)
       if (!userLikeStatus) return null
-      // if (userId) {
-      //   userLikeStatus = await LikeCommentStatusesModel
-      //     .find({userId, commentId: {$in: commentsIds}}).lean()
-      // } else {
-      //   // for (let i = 0; i < commentsIds.length; i++) {
-      //   //   userLikeStatus.push({userId: 'noUserId', commentId: commentsIds[i].toString(), likeStatus: LikesStatuses.NONE})
-      //   // }
-      //   userLikeStatus = commentsIds.map(commentId => ({
-      //     userId: 'noUserId',
-      //     commentId: commentId.toString(),
-      //     likeStatus: LikesStatuses.NONE
-      //   }))
-      // }
 
       return {
         totalCount,

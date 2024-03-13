@@ -34,10 +34,6 @@ export class CommentService {
     const createdCommentId = await CommentRepository.createComment(newComment)
     if (!createdCommentId) return null
 
-    // const userLikeStatus = await CommentRepository.getUserLikeCommentStatus(userId.toString(), createdCommentId)
-    // const userLikeStatus = await this.updateLikeStatus(createdCommentId, userId, LikesStatuses.NONE)
-
-    // const createdComment = await CommentQueryRepository.getCommentById(createdCommentId, userLikeStatus ?? LikesStatuses.NONE)
     const createdComment = await CommentQueryRepository.getCommentById(createdCommentId, LikesStatuses.NONE)
     if (!createdComment) return null
 
