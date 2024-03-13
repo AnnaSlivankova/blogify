@@ -36,8 +36,8 @@ export enum StatusCodes {
   INTERNAL_SERVER_ERROR = 500,
 }
 
-export type ObjectResult<D> = {
+export type ObjectResult<D = null> = {
   status: StatusCodes
   errorMessages?: string
-  data: D
+  data?: D
 }

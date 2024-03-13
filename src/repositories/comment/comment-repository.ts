@@ -3,6 +3,7 @@ import {ObjectId, WithId} from "mongodb";
 import {UpdateCommentModel} from "../../models/comment-models/input/update-comment-model";
 import {CommentModel} from "./comment-schema";
 import {LikeCommentStatusesModel} from "./like-comment-statuses-schema";
+import {LikeCommentStatusesDb} from "../../models/likes-models/db/like-comment-statuses-db";
 
 export class CommentRepository {
   static async createComment(createdData: CommentDb): Promise<string | null> {
@@ -52,11 +53,10 @@ export class CommentRepository {
     }
   }
 
-
   static async getAllPostComments(postId: string): Promise<null | WithId<CommentDb>[]> {
     try {
       const comments = await CommentModel.find({postId: postId}).lean()
-      if(!comments) return null
+      if (!comments) return null
 
       // comments[0]._id
 
@@ -66,7 +66,6 @@ export class CommentRepository {
       return null
     }
   }
-
 
   static async putUserCommentLikeStatusInDB(userId: string, commentId: string, likeStatus: LikesStatuses): Promise<LikesStatuses | null> {
     try {
@@ -82,19 +81,12 @@ export class CommentRepository {
 
   static async changeUserCommentLikeStatusInDB(userId: string, commentId: string, likeStatus: LikesStatuses): Promise<boolean> {
     try {
-
       const updatedStatus = await LikeCommentStatusesModel.findOneAndUpdate({
         userId,
         commentId
       }, {likeStatus: likeStatus}).lean()
+
       if (!updatedStatus) return false
-
-      // const comment = await LikeCommentStatusesModel.findOne({userId, commentId}).lean()
-      // if(!comment) return false
-
-      // comment.likeStatus = likeStatus
-
-      // await comment.save()
 
       return true
     } catch (e) {
@@ -102,7 +94,6 @@ export class CommentRepository {
       return false
     }
   }
-
 
   static async getUserLikeCommentStatus(userId: string, commentId: string): Promise<LikesStatuses | null> {
     try {
@@ -116,7 +107,7 @@ export class CommentRepository {
     }
   }
 
-  static async getUserLikeCommentsStatuses(userId: string) {
+  static async getUserLikeCommentsStatuses(userId: string):Promise<null| WithId<LikeCommentStatusesDb>[]> {
     try {
       const currentLikeStatuses = await LikeCommentStatusesModel.find({userId}).lean()
       if (!currentLikeStatuses.length) return null
@@ -128,35 +119,44 @@ export class CommentRepository {
     }
   }
 
-
   static async updateCommentLikeStatuses(id: string, likeStatus: LikesStatuses, prevLikeStatus: string): Promise<boolean> {
     try {
       const comment = await CommentModel.findOne({_id: id})
       if (!comment) return false
 
-      if (likeStatus === LikesStatuses.LIKE && likeStatus !== prevLikeStatus) {
-        comment.likesInfo.likesCount = comment.likesInfo.likesCount + 1
-        console.log('1')
+      switch (likeStatus) {
+        case LikesStatuses.LIKE:
+          if (prevLikeStatus !== LikesStatuses.LIKE) {
+            comment.likesInfo.likesCount++
+          }
+          if (prevLikeStatus === LikesStatuses.DISLIKE) {
+            comment.likesInfo.dislikesCount--
+          }
+          break;
 
-        if (prevLikeStatus === LikesStatuses.DISLIKE) comment.likesInfo.dislikesCount = comment.likesInfo.dislikesCount - 1
-      }
+        case LikesStatuses.DISLIKE:
+          if (prevLikeStatus !== LikesStatuses.DISLIKE) {
+            comment.likesInfo.dislikesCount++
+          }
+          if (prevLikeStatus === LikesStatuses.LIKE) {
+            comment.likesInfo.likesCount--
+          }
+          break;
 
+        case LikesStatuses.NONE:
+            // if (prevLikeStatus !== LikesStatuses.NONE && [LikesStatuses.LIKE, LikesStatuses.DISLIKE].includes(prevLikeStatus as LikesStatuses)) {
+            if (prevLikeStatus !== LikesStatuses.NONE) {
+              if (prevLikeStatus === LikesStatuses.LIKE) {
+                comment.likesInfo.likesCount--
+              }
+              if (prevLikeStatus === LikesStatuses.DISLIKE) {
+                comment.likesInfo.dislikesCount--
+              }
+          }
+          break;
 
-
-
-      if (likeStatus === LikesStatuses.DISLIKE && likeStatus !== prevLikeStatus) {
-        comment.likesInfo.dislikesCount = comment.likesInfo.dislikesCount + 1
-        console.log('2')
-        if (prevLikeStatus === LikesStatuses.LIKE) comment.likesInfo.likesCount = comment.likesInfo.likesCount - 1
-      }
-
-
-
-
-      if (likeStatus === LikesStatuses.NONE && likeStatus !== prevLikeStatus && (prevLikeStatus === LikesStatuses.LIKE || prevLikeStatus === LikesStatuses.DISLIKE)) {
-        console.log('3')
-        if (prevLikeStatus === LikesStatuses.LIKE) comment.likesInfo.likesCount = comment.likesInfo.likesCount - 1
-        if (prevLikeStatus === LikesStatuses.DISLIKE) comment.likesInfo.dislikesCount = comment.likesInfo.dislikesCount - 1
+        default:
+          break;
       }
 
       await comment.save()

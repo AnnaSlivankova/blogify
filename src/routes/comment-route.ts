@@ -15,7 +15,6 @@ commentRoute.put('/:id', authJwtMiddleware, idValidationMiddleware, commentValid
   id: string
 }, UpdateCommentModel>, res: Response) => {
   const id = req.params.id
-
   const commentForUpdate = await CommentRepository.getCommentById(id)
 
   if (!commentForUpdate) {
@@ -33,7 +32,6 @@ commentRoute.put('/:id', authJwtMiddleware, idValidationMiddleware, commentValid
   }
 
   const isCommentUpdated = await CommentService.updateComment(id, newComment)
-
   if (!isCommentUpdated) {
     res.sendStatus(404)
     return
@@ -48,7 +46,6 @@ commentRoute.delete('/:id', authJwtMiddleware, idValidationMiddleware, async (re
   const id = req.params.id
 
   const commentForDelete = await CommentRepository.getCommentById(id)
-
   if (!commentForDelete) {
     res.sendStatus(404)
     return
@@ -60,7 +57,6 @@ commentRoute.delete('/:id', authJwtMiddleware, idValidationMiddleware, async (re
   }
 
   const isCommentDeleted = await CommentService.deleteCommentById(id)
-
   if (!isCommentDeleted) {
     res.sendStatus(404)
     return
@@ -71,23 +67,9 @@ commentRoute.delete('/:id', authJwtMiddleware, idValidationMiddleware, async (re
 
 commentRoute.get('/:id', idValidationMiddleware, async (req: Request<{ id: string }>, res: Response) => {
   const id = req.params.id //commentId
-  const rt = req.cookies['refreshToken']
+  const accessToken = req.headers.authorization?.split(' ')[1]
 
-
-  const at = req.headers.authorization?.split(' ')[1]
-
-  console.log('refreshToken from comment route', rt)
-  // console.log('accessToken from comment route', at)
-  console.log('headers from comment route', req.headers.authorization)
-
-  // const userLikeStatus = await CommentService.getCurrentUserLikeCommentStatusRT(id, rt)
-  const userLikeStatus = await CommentService.getCurrentUserLikeCommentStatusRT(id, at??"rt")
-  // if(!userLikeStatus) {
-  //   res.sendStatus(508)
-  //   return
-  // }
-
-  const comment = await CommentQueryRepository.getCommentById(id, userLikeStatus!)
+  const comment = await CommentQueryRepository.getCommentById(id, accessToken)
 
   if (!comment) {
     res.sendStatus(404)
@@ -100,14 +82,8 @@ commentRoute.get('/:id', idValidationMiddleware, async (req: Request<{ id: strin
 commentRoute.put('/:id/like-status', authJwtMiddleware, idValidationMiddleware, likeStatusValidation(), async (req: RequestWithParamsAndBody<{
   id: string
 }, UpdateLikeStatusInputModel>, res: Response<void>) => {
-
   const commentId = req.params.id
   const userId = req.user!._id
-
-  console.log('userId', req.user)
-  console.log('userId', userId)
-
-
   const likeStatus = req.body.likeStatus
 
   const updateLikeStatusResult = await CommentService.updateLikeStatus(commentId, userId, likeStatus)

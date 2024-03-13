@@ -5,30 +5,74 @@ import {Pagination} from "../../types";
 import {CommentModel} from "./comment-schema";
 import {LikesStatuses} from "../../models/comment-models/db/comment-db";
 import {LikeCommentStatusesDb} from "../../models/likes-models/db/like-comment-statuses-db";
+import {LikeCommentStatusesModel} from "./like-comment-statuses-schema";
+import {JwtService} from "../../services/jwt-service";
 
 export class CommentQueryRepository {
-  static async getCommentById(id: string, userLikeStatus: LikesStatuses): Promise<CommentViewModel | null> {
-    try {
-      const comment = await CommentModel.findOne({_id: new ObjectId(id)}).lean()
-      if (!comment) return null
+  static createDefaultLikeStatus(commentId: string): LikeCommentStatusesDb {
+    return {
+      userId: 'noUserId',
+      commentId: commentId,
+      likeStatus: LikesStatuses.NONE
+    }
+  }
 
-      return commentMapper(comment, userLikeStatus??LikesStatuses.NONE)
+  static async getCurrentLikeStatus(accessToken: string | undefined, commentId: string): Promise<LikesStatuses | null> {
+    if (!accessToken) return LikesStatuses.NONE
+    try {
+      const userId = await JwtService.getUserIdByToken(accessToken)
+      if (!userId) return LikesStatuses.NONE
+
+      const currentUserStatus = await LikeCommentStatusesModel.findOne({userId, commentId}).lean()
+
+      if (!currentUserStatus) {
+        return LikesStatuses.NONE
+      } else {
+        return currentUserStatus.likeStatus
+      }
     } catch (e) {
-      console.log('getCommentById qr error')
+      console.log('getCurrentLikeStatus', e)
       return null
     }
   }
 
-  static async getComments(postId: string, sortData: SortData, userLikeStatuses: LikeCommentStatusesDb[] | null): Promise<Pagination<CommentViewModel> | null> {
-    let ls: LikeCommentStatusesDb[]  = []
-
-    if(userLikeStatuses) {
-      ls = userLikeStatuses
+  static async getCurrentLikesStatuses(accessToken: string | undefined, commentsIds: string[]): Promise<LikeCommentStatusesDb[] | null> {
+    if (!accessToken) {
+      return commentsIds.map(commentId => this.createDefaultLikeStatus(commentId))
     }
 
     try {
-      console.log('userLikeStatuses', userLikeStatuses)
+      const userId = await JwtService.getUserIdByToken(accessToken)
+      if (!userId) {
+        return commentsIds.map(commentId => this.createDefaultLikeStatus(commentId))
+      }
 
+      return await LikeCommentStatusesModel.find({userId, commentId: {$in: commentsIds}}).lean()
+    } catch (e) {
+      console.log('getCurrentLikesStatuses', e)
+      return null
+    }
+  }
+
+  static async getCommentById(id: string, accessToken: string | undefined): Promise<CommentViewModel | null> {
+    const userLikeStatus = await this.getCurrentLikeStatus(accessToken, id)
+    if (!userLikeStatus) return null
+
+    try {
+      const comment = await CommentModel.findOne({_id: new ObjectId(id)}).lean()
+      if (!comment) return null
+
+      return commentMapper(comment, userLikeStatus)
+    } catch (e) {
+      console.log('getCommentById qr error', e)
+      return null
+    }
+  }
+
+  static async getComments(postId: string, sortData: SortData, accessToken: string | undefined): Promise<Pagination<CommentViewModel> | null> {
+    // const userId = await JwtService.getUserIdByToken(accessToken)
+    // let userLikeStatus: LikeCommentStatusesDb[] = []
+    try {
       const {sortDirection, sortBy, pageSize, pageNumber} = sortData
 
       const comments = await CommentModel
@@ -41,16 +85,32 @@ export class CommentQueryRepository {
       const totalCount = await CommentModel.countDocuments({postId: postId})
       const pagesCount = Math.ceil(totalCount / pageSize)
 
+      const commentsIds = comments.map(comment => comment._id.toString())
+      const userLikeStatus = await this.getCurrentLikesStatuses(accessToken, commentsIds)
+      if (!userLikeStatus) return null
+      // if (userId) {
+      //   userLikeStatus = await LikeCommentStatusesModel
+      //     .find({userId, commentId: {$in: commentsIds}}).lean()
+      // } else {
+      //   // for (let i = 0; i < commentsIds.length; i++) {
+      //   //   userLikeStatus.push({userId: 'noUserId', commentId: commentsIds[i].toString(), likeStatus: LikesStatuses.NONE})
+      //   // }
+      //   userLikeStatus = commentsIds.map(commentId => ({
+      //     userId: 'noUserId',
+      //     commentId: commentId.toString(),
+      //     likeStatus: LikesStatuses.NONE
+      //   }))
+      // }
+
       return {
         totalCount,
         pageSize,
         pagesCount,
         page: pageNumber,
         items: comments.map(comment => {
-          const userLikeStatus = ls
-            .find(el => el.commentId === comment._id.toString())
+          const currentLikeStatus = userLikeStatus.find(el => el.commentId === comment._id.toString())
 
-          return commentMapper(comment, userLikeStatus?.likeStatus ?? LikesStatuses.NONE)
+          return commentMapper(comment, currentLikeStatus?.likeStatus || LikesStatuses.NONE)
         })
       }
     } catch (e) {
