@@ -14,6 +14,7 @@ import {ObjectId, WithId} from "mongodb";
 import {AuthService} from "../src/services/auth-service/auth-service";
 import {SecurityDevicesQueryRepository} from "../src/repositories/security-devices/security-devices-query-repository";
 import {JwtService} from "../src/services/jwt-service";
+import {LikesStatuses} from "../src/models/comment-models/db/comment-db";
 
 export const testSeeder = {
   //BLOGS
@@ -241,6 +242,7 @@ export const testSeeder = {
     return {
       accessToken: accessToken,
       comment: comment.body,
+      postId
     }
   },
 
@@ -313,6 +315,35 @@ export const testSeeder = {
   async setNewPassword(newPassword: string, recoveryCode: string, status: number = 204) {
     return await req.post('/auth/new-password').send({newPassword, recoveryCode}).expect(status)
   },
+
+  //LIKES FOR COMMENTS
+  async createCommentManager(postId: string, accessToken: string, content: string = "stringstringstringst", status: number = 201) {
+    return await req
+      .post(`/posts/${postId}/comments`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({content})
+      .expect(status)
+  },
+
+
+  async putNewLikeStatusCommentManager(commentId: string, accessToken: string, likeStatus: LikesStatuses, status: number = 204) {
+    return await req
+      .put(`/comments/${commentId}/like-status`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({likeStatus})
+      .expect(status)
+  },
+
+
+
+  async getAllCommentsCookie(postId: string, refreshToken:string) {
+    const res = await req
+      .get(`${PATH.POSTS}/${postId}/comments`)
+      .set('Cookie', `refreshToken=${refreshToken}`)
+      .expect(200)
+    return res.body
+  },
+
 }
 
 export const paginatedEmptyResponse = {

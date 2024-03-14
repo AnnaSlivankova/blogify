@@ -157,7 +157,8 @@ postRoute.get('/:id/comments', idValidationMiddleware, async (req: RequestWithPa
     sortDirection: req.query.sortDirection ?? 'desc'
   }
 
-  const id = req.params.id
+  const id = req.params.id //postId
+  const accessToken = req.headers.authorization!.split(' ')[1]
 
   const post = await PostRepository.getPostById(id)
   if (!post) {
@@ -165,7 +166,7 @@ postRoute.get('/:id/comments', idValidationMiddleware, async (req: RequestWithPa
     return
   }
 
-  const comments = await CommentQueryRepository.getComments(id, sortData)
+  const comments = await CommentQueryRepository.getComments(id, sortData, accessToken)
 
   if (!comments) {
     res.sendStatus(404)

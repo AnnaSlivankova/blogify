@@ -1,9 +1,19 @@
 export type CommentDb = {
+  postId: string
   content: string
+  createdAt: string
   commentatorInfo: {
     userId: string
     userLogin: string
   }
-  createdAt: string
-  postId: string
+  likesInfo: {
+    likesCount: number
+    dislikesCount: number
+  }
+}
+
+export enum LikesStatuses {
+  NONE = 'None',
+  LIKE = 'Like',
+  DISLIKE = 'Dislike'
 }

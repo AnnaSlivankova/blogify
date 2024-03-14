@@ -15,7 +15,7 @@ export const UserSchema = new mongoose.Schema<UserDb>({
     recoveryCode: String,
     expirationDate: Date,
     updatedAt: String,
-  }
+  },
 })
 
 export const UserModel = mongoose.model<UserDb>('users', UserSchema)

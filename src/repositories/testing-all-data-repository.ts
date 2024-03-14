@@ -4,6 +4,7 @@ import {UserModel} from "./user/user-schema";
 import {CommentModel} from "./comment/comment-schema";
 import {DeviceAuthSessionsModel} from "./security-devices/device-auth-sessions-schema";
 import {ApiRequestsHistoryModel} from "./security-devices/api-requests-history-schema";
+import {LikeCommentStatusesModel} from "./comment/like-comment-statuses-schema";
 
 export class TestingAllDataRepository {
   static async deleteAllData() {
@@ -15,6 +16,7 @@ export class TestingAllDataRepository {
         CommentModel.deleteMany({}),
         DeviceAuthSessionsModel.deleteMany({}),
         ApiRequestsHistoryModel.deleteMany({}),
+        LikeCommentStatusesModel.deleteMany({}),
       ])
 
       return
