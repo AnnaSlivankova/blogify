@@ -336,10 +336,10 @@ export const testSeeder = {
 
 
 
-  async getAllCommentsCookie(postId: string, refreshToken:string) {
+  async getAllCommentsCookie(postId: string, accessToken:string) {
     const res = await req
       .get(`${PATH.POSTS}/${postId}/comments`)
-      .set('Cookie', `refreshToken=${refreshToken}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .expect(200)
     return res.body
   },

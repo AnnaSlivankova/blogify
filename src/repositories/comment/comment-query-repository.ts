@@ -13,7 +13,8 @@ export class CommentQueryRepository {
     return {
       userId: 'noUserId',
       commentId: commentId,
-      likeStatus: LikesStatuses.NONE
+      likeStatus: LikesStatuses.NONE,
+      iat: new Date().toISOString()
     }
   }
 

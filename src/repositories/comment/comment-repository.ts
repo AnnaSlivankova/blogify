@@ -54,7 +54,7 @@ export class CommentRepository {
 
   static async putUserCommentLikeStatusInDB(userId: string, commentId: string, likeStatus: LikesStatuses): Promise<LikesStatuses | null> {
     try {
-      const res = new LikeCommentStatusesModel({userId, commentId, likeStatus})
+      const res = new LikeCommentStatusesModel({userId, commentId, likeStatus, iat: new Date().toISOString()})
       await res.save()
 
       return res.likeStatus

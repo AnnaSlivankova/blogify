@@ -6,6 +6,7 @@ export const LikeCommentStatusesSchema = new mongoose.Schema<LikeCommentStatuses
   commentId: {type: String, require: true},
   userId: {type: String, require: true},
   likeStatus: {type: String, enum: LikesStatuses, require: true},
+  iat: {type: String, require: true}
 })
 
 export const LikeCommentStatusesModel = mongoose.model<LikeCommentStatusesDb>('LikeCommentStatuses', LikeCommentStatusesSchema)

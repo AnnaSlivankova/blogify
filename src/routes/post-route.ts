@@ -158,7 +158,7 @@ postRoute.get('/:id/comments', idValidationMiddleware, async (req: RequestWithPa
   }
 
   const id = req.params.id //postId
-  const accessToken = req.headers.authorization!.split(' ')[1]
+  const accessToken = req.headers.authorization?.split(' ')[1]
 
   const post = await PostRepository.getPostById(id)
   if (!post) {
