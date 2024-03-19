@@ -51,7 +51,11 @@ export class BlogService {
       content,
       createdAt: new Date().toISOString(),
       blogId,
-      blogName: blog.name
+      blogName: blog.name,
+      extendedLikesInfo: {
+        dislikesCount: 0,
+        likesCount: 0
+      }
     }
 
     const createdPostId = await PostRepository.createPost(newPost)
@@ -60,7 +64,7 @@ export class BlogService {
       return null
     }
 
-    const post = await PostQueryRepository.getPostById(createdPostId)
+    const post = await PostQueryRepository.getPostById(createdPostId, undefined)
 
     if (!post) {
       return null

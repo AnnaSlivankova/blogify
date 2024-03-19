@@ -14,7 +14,7 @@ export class CommentQueryRepository {
       userId: 'noUserId',
       commentId: commentId,
       likeStatus: LikesStatuses.NONE,
-      iat: new Date().toISOString()
+      addedAt: new Date().toISOString()
     }
   }
 
