@@ -31,8 +31,21 @@ describe('COMMENTS_E2E', () => {
       await req.delete(PATH.TESTING).expect(204)
     })
 
-    it('GET should return ...1', async () => {
+    it('GET should return all post comments with likes/dislikes statuses and myStatus: None for no-logged in user', async () => {
+      const {postId} = await testSeeder.createCommentInDb()
+      const postComments = await testSeeder.getAllComments(postId)
+
+      expect(postComments.items.length).toBe(1)
+      expect(postComments.items[0].likesInfo.likesCount).toBe(0)
+      expect(postComments.items[0].likesInfo.dislikesCount).toBe(0)
+      expect(postComments.items[0].likesInfo.myStatus).toBe(LikesStatuses.NONE)
+    })
+
+
+    it('GET should return all post comments with likes/dislikes statuses and myStatus: None', async () => {
       const {comment, accessToken, postId} = await testSeeder.createCommentInDb()
+
+      console.log('accessToken',accessToken)
 
       await req
         .put(`${PATH.COMMENTS}/${comment.id}/like-status`)
@@ -52,9 +65,8 @@ describe('COMMENTS_E2E', () => {
       await testSeeder.registration('user1', 'user1@gmail.com', '123456')
       await testSeeder.registration('user2', 'user2@gmail.com', '123456')
       const res1 = await testSeeder.login('user1', '123456')
-      const rt1 = res1.headers['set-cookie']
-      const refreshToken = rt1[0].split('=')[1].split(';')[0]
-      console.log('rt1', refreshToken)
+
+      const refreshToken = res1.body.accessToken
 
       const res2 = await testSeeder.login('user2', '123456')
 

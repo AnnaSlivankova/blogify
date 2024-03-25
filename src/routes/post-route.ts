@@ -16,7 +16,7 @@ import {PostQueryRepository} from "../repositories/post/post-query-repository";
 import {QueryPostModel} from "../models/post-models/input/query-post-model";
 import {PostService} from "../services/post-service";
 import {CreateCommentModel} from "../models/comment-models/input/create-comment-model";
-import {commentValidation} from "../validators/comment-validators";
+import {commentValidation, likeStatusValidation} from "../validators/comment-validators";
 import {authJwtMiddleware} from "../middlewares/auth/auth-jwt-middleware";
 import {CommentService} from "../services/comment-service";
 import {QueryCommentModal} from "../models/comment-models/input/query-comment-modal";
@@ -24,12 +24,12 @@ import {CommentQueryRepository} from "../repositories/comment/comment-query-repo
 import {CommentViewModel} from "../models/comment-models/output/CommentViewModel";
 import {PostRepository} from "../repositories/post/post-repository";
 import {idValidationMiddleware} from "../middlewares/id-validation-middleware";
+import {UpdateLikeStatusInputModel} from "../models/comment-models/input/update-like-status-input-model";
 
 export const postRoute = Router({})
 
 postRoute.get('/', async (req: RequestWithQuery<QueryPostModel>, res: Response<Pagination<PostViewModel>>) => {
   const {sortDirection, sortBy, pageSize, pageNumber} = req.query
-
   const sortData = {
     pageNumber: pageNumber ? +pageNumber : 1,
     pageSize: pageSize ? +pageSize : 10,
@@ -37,7 +37,9 @@ postRoute.get('/', async (req: RequestWithQuery<QueryPostModel>, res: Response<P
     sortDirection: sortDirection ?? 'desc'
   }
 
-  const posts = await PostQueryRepository.getAllPosts(sortData)
+  const accessToken = req.headers.authorization?.split(' ')[1]
+
+  const posts = await PostQueryRepository.getAllPosts(sortData, accessToken)
 
   if (!posts) {
     res.sendStatus(404)
@@ -48,9 +50,10 @@ postRoute.get('/', async (req: RequestWithQuery<QueryPostModel>, res: Response<P
 })
 
 postRoute.get('/:id', idValidationMiddleware, async (req: Request<{ id: string }>, res: Response<PostViewModel>) => {
-  const id = req.params.id
+  const id = req.params.id //postId
+  const accessToken = req.headers.authorization?.split(' ')[1]
 
-  const post = await PostQueryRepository.getPostById(id)
+  const post = await PostQueryRepository.getPostById(id, accessToken)
 
   if (!post) {
     res.sendStatus(404)
@@ -128,6 +131,20 @@ postRoute.delete('/:id', authMiddleware, idValidationMiddleware, async (req: Req
   res.sendStatus(204)
 })
 
+postRoute.put('/:id/like-status', authJwtMiddleware, idValidationMiddleware, likeStatusValidation(), async (req: RequestWithParamsAndBody<{
+  id: string
+}, UpdateLikeStatusInputModel>, res: Response<void>) => {
+  const postId = req.params.id
+  const userId = req.user!._id
+  const login = req.user!.login
+  const likeStatus = req.body.likeStatus
+
+  const updateLikeStatusResult = await PostService.updateLikeStatus(postId, userId, likeStatus, login)
+
+  res.sendStatus(updateLikeStatusResult.status)
+})
+
+
 postRoute.post('/:id/comments', authJwtMiddleware, idValidationMiddleware, commentValidation(), async (req: RequestWithParamsAndBody<{
   id: string
 }, CreateCommentModel>, res: Response) => {
@@ -158,7 +175,7 @@ postRoute.get('/:id/comments', idValidationMiddleware, async (req: RequestWithPa
   }
 
   const id = req.params.id //postId
-  const accessToken = req.headers.authorization!.split(' ')[1]
+  const accessToken = req.headers.authorization?.split(' ')[1]
 
   const post = await PostRepository.getPostById(id)
   if (!post) {

@@ -54,7 +54,7 @@ export class CommentRepository {
 
   static async putUserCommentLikeStatusInDB(userId: string, commentId: string, likeStatus: LikesStatuses): Promise<LikesStatuses | null> {
     try {
-      const res = new LikeCommentStatusesModel({userId, commentId, likeStatus})
+      const res = new LikeCommentStatusesModel({userId, commentId, likeStatus, addedAt: new Date().toISOString()})
       await res.save()
 
       return res.likeStatus
@@ -97,39 +97,7 @@ export class CommentRepository {
       const comment = await CommentModel.findOne({_id: id})
       if (!comment) return false
 
-      switch (likeStatus) {
-        case LikesStatuses.LIKE:
-          if (prevLikeStatus !== LikesStatuses.LIKE) {
-            comment.likesInfo.likesCount++
-          }
-          if (prevLikeStatus === LikesStatuses.DISLIKE) {
-            comment.likesInfo.dislikesCount--
-          }
-          break;
-
-        case LikesStatuses.DISLIKE:
-          if (prevLikeStatus !== LikesStatuses.DISLIKE) {
-            comment.likesInfo.dislikesCount++
-          }
-          if (prevLikeStatus === LikesStatuses.LIKE) {
-            comment.likesInfo.likesCount--
-          }
-          break;
-
-        case LikesStatuses.NONE:
-          if (prevLikeStatus !== LikesStatuses.NONE) {
-            if (prevLikeStatus === LikesStatuses.LIKE) {
-              comment.likesInfo.likesCount--
-            }
-            if (prevLikeStatus === LikesStatuses.DISLIKE) {
-              comment.likesInfo.dislikesCount--
-            }
-          }
-          break;
-
-        default:
-          break;
-      }
+      changeLikeStatus(comment.likesInfo, likeStatus, prevLikeStatus)
 
       await comment.save()
 
@@ -140,3 +108,46 @@ export class CommentRepository {
     }
   }
 }
+
+export const changeLikeStatus = (info: any, likeStatus: LikesStatuses, prevLikeStatus: string) => {
+  switch(likeStatus) {
+    case
+    LikesStatuses.LIKE
+    :
+      if (prevLikeStatus !== LikesStatuses.LIKE) {
+        info.likesCount++
+      }
+      if (prevLikeStatus === LikesStatuses.DISLIKE) {
+        info.dislikesCount--
+      }
+      break;
+
+    case
+    LikesStatuses.DISLIKE
+    :
+      if (prevLikeStatus !== LikesStatuses.DISLIKE) {
+        info.dislikesCount++
+      }
+      if (prevLikeStatus === LikesStatuses.LIKE) {
+        info.likesCount--
+      }
+      break;
+
+    case
+    LikesStatuses.NONE
+    :
+      if (prevLikeStatus !== LikesStatuses.NONE) {
+        if (prevLikeStatus === LikesStatuses.LIKE) {
+          info.likesCount--
+        }
+        if (prevLikeStatus === LikesStatuses.DISLIKE) {
+          info.dislikesCount--
+        }
+      }
+      break;
+
+    default:
+      break;
+  }
+}
+

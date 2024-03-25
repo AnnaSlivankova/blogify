@@ -6,6 +6,9 @@ import {PostViewModel} from "../models/post-models/output/post-view-model";
 import {CreatePostModel} from "../models/post-models/input/create-post-model";
 import {BlogRepository} from "../repositories/blog/blog-repository";
 import {UpdatePostModel} from "../models/post-models/input/update-post-model";
+import {ObjectId} from "mongodb";
+import {LikesStatuses} from "../models/comment-models/db/comment-db";
+import {ObjectResult, StatusCodes} from "../types";
 
 export class PostService {
   static async createPost(createPostModel: CreatePostModel): Promise<PostViewModel | null> {
@@ -21,7 +24,11 @@ export class PostService {
       shortDescription: createPostModel.shortDescription,
       blogId: createPostModel.blogId,
       blogName: relevantBlog.name,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      extendedLikesInfo: {
+        likesCount: 0,
+        dislikesCount: 0
+      }
     }
 
     const createdPostId = await PostRepository.createPost(newPost)
@@ -30,7 +37,7 @@ export class PostService {
       return null
     }
 
-    const createdPost = await PostQueryRepository.getPostById(createdPostId)
+    const createdPost = await PostQueryRepository.getPostById(createdPostId, undefined)
 
     if (!createdPost) {
       return null
@@ -58,5 +65,25 @@ export class PostService {
     }
 
     return await PostRepository.deletePost(postId)
+  }
+
+  static async updateLikeStatus(postId: string, userId: ObjectId, likeStatus: LikesStatuses, login:string): Promise<ObjectResult> {
+    const post = await PostRepository.getPostById(postId)
+    if (!post) return {status: StatusCodes.NOT_FOUND}
+
+    const prevLikeUserStatus = await PostRepository.getUserLikePostStatus(userId.toString(), postId)
+
+    const isPostLikeStatusesUpdated = await PostRepository.updatePostLikeStatuses(postId, likeStatus, prevLikeUserStatus || LikesStatuses.NONE)
+    if (!isPostLikeStatusesUpdated) return {status: StatusCodes.INTERNAL_SERVER_ERROR}
+
+    if (!prevLikeUserStatus) {
+      const createLikeData = await PostRepository.putUserPostLikeStatusInDB(userId.toString(), postId, likeStatus, login)
+      if (!createLikeData) return {status: StatusCodes.INTERNAL_SERVER_ERROR}
+    } else {
+      const changePrevLikeUserStatus = await PostRepository.changeUserPostLikeStatusInDB(userId.toString(), postId, likeStatus)
+      if (!changePrevLikeUserStatus) return {status: StatusCodes.INTERNAL_SERVER_ERROR}
+    }
+
+    return {status: StatusCodes.NO_CONTENT}
   }
 }

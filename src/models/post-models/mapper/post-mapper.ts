@@ -1,8 +1,9 @@
-import {PostViewModel} from "../output/post-view-model";
+import {NewestLikes, PostViewModel} from "../output/post-view-model";
 import {PostDb} from "../db/post-db";
 import {WithId} from "mongodb";
+import {LikesStatuses} from "../../comment-models/db/comment-db";
 
-export const postMapper = (post: WithId<PostDb>): PostViewModel => {
+export const postMapper = (post: WithId<PostDb>, myStatus: LikesStatuses, newestLikes: NewestLikes[]): PostViewModel => {
   return {
     id: post._id.toString(),
     blogName: post.blogName,
@@ -10,6 +11,12 @@ export const postMapper = (post: WithId<PostDb>): PostViewModel => {
     content: post.content,
     title: post.title,
     shortDescription: post.shortDescription,
-    createdAt: post.createdAt
+    createdAt: post.createdAt,
+    extendedLikesInfo: {
+      dislikesCount: post.extendedLikesInfo.dislikesCount,
+      likesCount: post.extendedLikesInfo.likesCount,
+      myStatus,
+      newestLikes
+    }
   }
 }

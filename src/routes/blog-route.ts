@@ -68,8 +68,9 @@ blogRoute.get('/:id/posts', idValidationMiddleware, async (req: RequestWithParam
   }
 
   const id = req.params.id
+  const accessToken = req.headers.authorization?.split(' ')[1]
 
-  const posts = await PostQueryRepository.getAllPostsByBlog(id, sortData)
+  const posts = await PostQueryRepository.getAllPostsByBlog(id, sortData, accessToken)
 
   if (!posts) {
     res.sendStatus(404)
